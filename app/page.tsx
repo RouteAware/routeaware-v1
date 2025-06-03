@@ -1,7 +1,7 @@
 // app/page.tsx
 "use client";
 
-import Map from "@/components/Map";
+import Map from "./components/Map";
 
 export default function HomePage() {
   return (
