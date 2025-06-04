@@ -12,7 +12,7 @@ const Map = () => {
         loading="lazy"
         allowFullScreen
         referrerPolicy="no-referrer-when-downgrade"
-        src={`https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY_HERE&center=39.5,-98.35&zoom=4`}
+        src={`https://www.google.com/maps/embed/v1/view?key=AIzaSyBVuvZK_WD_Qxxm-OOvqnJkfN1SzDpz8Do&center=39.5,-98.35&zoom=4`}
       ></iframe>
     </div>
   );
