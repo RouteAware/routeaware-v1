@@ -1,43 +1,34 @@
 // app/page.tsx
-"use client";
 
 import Map from "./components/Map";
 
-export default function HomePage() {
+export default function Home() {
   return (
-    <main className="min-h-screen bg-gray-100 text-gray-800 p-6">
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Map Tile */}
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Map</h2>
+    <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
+      <h1 className="text-3xl font-bold mb-6 text-center">RouteAware Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-white shadow-lg rounded-2xl p-4">
+          <h2 className="text-xl font-semibold mb-2">Map</h2>
           <Map />
         </div>
-
-        {/* Input Form Tile */}
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-xl font-semibold mb-4">Route Input</h2>
+        <div className="bg-white shadow-lg rounded-2xl p-4">
+          <h2 className="text-xl font-semibold mb-2">Route Input</h2>
           <input
             type="text"
             placeholder="Origin Address"
-            className="border p-2 rounded w-full mb-4"
+            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
           />
           <input
             type="text"
             placeholder="Destination Address"
-            className="border p-2 rounded w-full mb-4"
+            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
           />
-          <button className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-            Check Route
-          </button>
+          <button className="w-full bg-blue-600 text-white py-2 rounded-lg">Check Route</button>
         </div>
-
-        {/* Route Summary Tile */}
-        <div className="bg-white rounded-2xl shadow p-6 lg:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Route Summary</h2>
-          <div className="bg-yellow-100 text-yellow-800 px-4 py-2 rounded-md text-sm font-medium inline-block">
-            Coming Soon
-          </div>
-        </div>
+      </div>
+      <div className="bg-white shadow-lg rounded-2xl p-4 mt-6">
+        <h2 className="text-xl font-semibold mb-2">Route Summary</h2>
+        <span className="inline-block bg-yellow-200 text-yellow-900 text-sm px-3 py-1 rounded-full">Coming Soon</span>
       </div>
     </main>
   );
