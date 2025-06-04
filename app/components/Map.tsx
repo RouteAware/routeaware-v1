@@ -1,8 +1,21 @@
-// app/components/Map.tsx
-export default function Map() {
+'use client';
+
+import React from 'react';
+
+const Map = () => {
   return (
-    <div className="bg-gray-100 text-gray-500 text-center p-10 rounded-xl shadow-md">
-      Map coming soon...
+    <div className="w-full h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+      <iframe
+        width="100%"
+        height="100%"
+        style={{ border: 0 }}
+        loading="lazy"
+        allowFullScreen
+        referrerPolicy="no-referrer-when-downgrade"
+        src={`https://www.google.com/maps/embed/v1/view?key=YOUR_API_KEY_HERE&center=39.5,-98.35&zoom=4`}
+      ></iframe>
     </div>
   );
-}
+};
+
+export default Map;
