@@ -1,29 +1,59 @@
 'use client';
 
-import React from 'react';
-import { GoogleMap, useLoadScript } from '@react-google-maps/api';
+import React, { useEffect, useState } from 'react';
+import { GoogleMap, useLoadScript, DirectionsRenderer } from '@react-google-maps/api';
 
-// Centered on continental U.S.
-const center = { lat: 39.5, lng: -98.35 };
+interface MapProps {
+  origin: string;
+  destination: string;
+}
 
-// Style for the map container
 const containerStyle = {
   width: '100%',
   height: '300px',
 };
 
-const Map = () => {
-  // Load Google Maps JS API with your key from .env
+// Default center: continental US
+const defaultCenter = {
+  lat: 39.5,
+  lng: -98.35,
+};
+
+const Map: React.FC<MapProps> = ({ origin, destination }) => {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string,
   });
 
-  // Show an error if loading fails
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+
+  useEffect(() => {
+    if (!isLoaded || !origin || !destination) {
+      setDirections(null); // Reset if incomplete inputs
+      return;
+    }
+
+    const directionsService = new google.maps.DirectionsService();
+    directionsService.route(
+      {
+        origin,
+        destination,
+        travelMode: google.maps.TravelMode.DRIVING,
+      },
+      (result, status) => {
+        if (status === 'OK' && result) {
+          setDirections(result);
+        } else {
+          console.error('Directions request failed:', status);
+          setDirections(null); // Clear on error
+        }
+      }
+    );
+  }, [isLoaded, origin, destination]);
+
   if (loadError) {
     return <div className="bg-red-100 text-red-800 p-4 rounded">Error loading map</div>;
   }
 
-  // Show a loading state while the map is initializing
   if (!isLoaded) {
     return (
       <div className="bg-gray-200 h-[300px] flex items-center justify-center rounded-xl">
@@ -36,14 +66,14 @@ const Map = () => {
     <div className="w-full h-[300px] bg-gray-200 rounded-xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={center}
+        center={directions ? undefined : defaultCenter}
         zoom={4}
         options={{
-          disableDefaultUI: true, // Hide map controls
-          zoomControl: true,      // But keep zoom buttons
+          disableDefaultUI: true,
+          zoomControl: true,
         }}
       >
-        {/* Map is loaded — ready for directions rendering next */}
+        {directions && <DirectionsRenderer directions={directions} />}
       </GoogleMap>
     </div>
   );
