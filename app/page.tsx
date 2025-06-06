@@ -11,35 +11,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const getRouteSummary = async () => {
-  setLoading(true);
-  setError('');
-  setDistance('');
-  setDuration('');
-
-  try {
-    const response = await fetch(
-      `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
-        origin
-      )}&destination=${encodeURIComponent(destination)}&key=AIzaSyBVuvZK_WD_Qxxm-OOvqnJkfN1SzDpz8Do`
-    );
-
-    const data = await response.json();
-    console.log('Directions API response:', data); // ← now it's safe!
-
-    if (data.status === 'OK') {
-      const leg = data.routes[0].legs[0];
-      setDistance(leg.distance.text);
-      setDuration(leg.duration.text);
-    } else {
-      setError(`Google Directions API error: ${data.status}`);
-    }
-  } catch {
-  setError('Error fetching route. Please try again.'); 
-  } finally {
-    setLoading(false);
-  }
-};
+  // This callback will receive summary from Map component
+  const handleRouteSummary = (summary: { distance: string; duration: string }) => {
+    setDistance(summary.distance);
+    setDuration(summary.duration);
+    setError('');
+  };
 
   return (
     <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
@@ -49,7 +26,7 @@ export default function Home() {
         {/* Map Tile */}
         <div className="bg-white shadow-lg rounded-2xl p-4">
           <h2 className="text-xl font-semibold mb-2">Map</h2>
-          <Map origin={origin} destination={destination} />
+          <Map origin={origin} destination={destination} onRouteSummary={handleRouteSummary} />
         </div>
 
         {/* Input Tile */}
@@ -70,7 +47,17 @@ export default function Home() {
             className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
           />
           <button
-            onClick={getRouteSummary}
+            onClick={() => {
+              if (!origin || !destination) {
+                setError('Please enter both origin and destination.');
+                return;
+              }
+              setLoading(true);
+              setDistance('');
+              setDuration('');
+              setError('');
+              setTimeout(() => setLoading(false), 1000); // simulate loading
+            }}
             disabled={loading}
             className="w-full bg-blue-600 text-white py-2 rounded-lg"
           >
