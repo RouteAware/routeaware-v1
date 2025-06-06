@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Footer from './components/Footer';
+import { calculateETA } from './utils/calculateETA';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
@@ -18,12 +19,19 @@ export default function Home() {
   const [showWeather, setShowWeather] = useState(false);
   const [weatherLayer, setWeatherLayer] = useState('precipitation_new');
   const [weatherOpacity, setWeatherOpacity] = useState(0.5);
+  const [pickupTime, setPickupTime] = useState('');
+  const [pickupDate, setPickupDate] = useState('');
+  const [dailyMiles, setDailyMiles] = useState('');
+  const [estimatedArrival, setEstimatedArrival] = useState('');
 
   const handleRouteSummary = (distance: string, duration: string, traffic?: string) => {
     setDistance(distance);
     setDuration(duration);
     setTrafficDelay(traffic || '');
     setError('');
+
+    const eta = calculateETA(distance, pickupDate, pickupTime, dailyMiles);
+    setEstimatedArrival(eta);
   };
 
   const handleReset = () => {
@@ -32,6 +40,10 @@ export default function Home() {
     setDistance('');
     setDuration('');
     setTrafficDelay('');
+    setPickupTime('');
+    setPickupDate('');
+    setDailyMiles('');
+    setEstimatedArrival('');
     setError('');
   };
 
@@ -62,7 +74,7 @@ export default function Home() {
                 <span>Show Weather</span>
               </label>
               {showWeather && (
-                <>
+                <div className="flex flex-wrap gap-2">
                   <select
                     className="px-2 py-1 border border-gray-300 rounded"
                     value={weatherLayer}
@@ -82,7 +94,7 @@ export default function Home() {
                     <option value="0.5">Medium</option>
                     <option value="0.8">High</option>
                   </select>
-                </>
+                </div>
               )}
             </div>
 
@@ -114,6 +126,26 @@ export default function Home() {
               onChange={(e) => setDestination(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
+            <input
+              type="date"
+              value={pickupDate}
+              onChange={(e) => setPickupDate(e.target.value)}
+              className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
+            />
+            <input
+              type="time"
+              value={pickupTime}
+              onChange={(e) => setPickupTime(e.target.value)}
+              className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
+            />
+            <input
+              type="number"
+              placeholder="Daily Mileage (e.g., 600)"
+              value={dailyMiles}
+              onChange={(e) => setDailyMiles(e.target.value)}
+              className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
+            />
+
             <button
               onClick={() => {
                 if (!origin || !destination) {
@@ -124,8 +156,9 @@ export default function Home() {
                 setDistance('');
                 setDuration('');
                 setTrafficDelay('');
+                setEstimatedArrival('');
                 setError('');
-                setTimeout(() => setLoading(false), 1000); // simulate loading
+                setTimeout(() => setLoading(false), 1000);
               }}
               disabled={loading}
               className="w-full bg-blue-600 text-white py-2 rounded-lg mb-2"
@@ -151,18 +184,11 @@ export default function Home() {
           )}
 
           {distance && duration && (
-            <div>
-              <p>
-                <strong>Distance:</strong> {distance}
-              </p>
-              <p>
-                <strong>Estimated Time:</strong> {duration}
-              </p>
-              {trafficDelay && (
-                <p>
-                  <strong>Time with Traffic:</strong> {trafficDelay}
-                </p>
-              )}
+            <div className="space-y-1">
+              <p><strong>Distance:</strong> {distance}</p>
+              <p><strong>Estimated Time:</strong> {duration}</p>
+              {trafficDelay && <p><strong>Time with Traffic:</strong> {trafficDelay}</p>}
+              {estimatedArrival && <p><strong>Estimated Arrival:</strong> {estimatedArrival}</p>}
             </div>
           )}
         </div>
