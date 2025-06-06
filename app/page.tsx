@@ -74,20 +74,16 @@ export default function Home() {
           <div className="bg-red-100 text-red-800 p-3 rounded mb-2">{error}</div>
         )}
 
-        {distance && duration ? (
-          <div>
-            <p>
-              <strong>Distance:</strong> {distance}
-            </p>
-            <p>
-              <strong>Estimated Time:</strong> {duration}
-            </p>
-          </div>
-        ) : (
-          <span className="inline-block bg-yellow-200 text-yellow-900 text-sm px-3 py-1 rounded-full">
-            Coming Soon
-          </span>
-        )}
+        {distance && duration && (
+  <div>
+    <p>
+      <strong>Distance:</strong> {distance}
+    </p>
+    <p>
+      <strong>Estimated Time:</strong> {duration}
+    </p>
+  </div>
+)}
       </div>
     </main>
   );
