@@ -11,7 +11,7 @@ import {
 interface MapProps {
   origin: string;
   destination: string;
-  showTraffic?: boolean; // ✅ Add this
+  showTraffic?: boolean;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
 }
 
@@ -22,9 +22,8 @@ const containerStyle = {
 
 const center = { lat: 39.5, lng: -98.35 }; // Center of USA
 
-const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
+const Map: React.FC<MapProps> = ({ origin, destination, showTraffic = false, onSummaryUpdate }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -92,6 +91,7 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
         {directions && <DirectionsRenderer directions={directions} />}
+        {showTraffic && <TrafficLayer />}
       </GoogleMap>
     </div>
   );
