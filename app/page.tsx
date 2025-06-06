@@ -34,8 +34,8 @@ export default function Home() {
     } else {
       setError(`Google Directions API error: ${data.status}`);
     }
-  } catch (err) {
-    setError('Error fetching route. Please try again.');
+  } catch {
+  setError('Error fetching route. Please try again.'); 
   } finally {
     setLoading(false);
   }
