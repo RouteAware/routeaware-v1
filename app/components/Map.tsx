@@ -12,6 +12,7 @@ interface MapProps {
   origin: string;
   destination: string;
   showTraffic?: boolean;
+  showWeather?: boolean;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
 }
 
@@ -22,7 +23,7 @@ const containerStyle = {
 
 const center = { lat: 39.5, lng: -98.35 }; // Center of USA
 
-const Map: React.FC<MapProps> = ({ origin, destination, showTraffic = false, onSummaryUpdate }) => {
+const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, showWeather, onSummaryUpdate }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -90,8 +91,24 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic = false, onS
         onLoad={handleLoad}
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
-        {directions && <DirectionsRenderer directions={directions} />}
         {showTraffic && <TrafficLayer />}
+        {showWeather && (
+          <div
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              top: 0,
+              left: 0,
+              pointerEvents: 'none',
+              backgroundImage:
+                'url(https://tile.openweathermap.org/map/precipitation_new/4/4/6.png?appid=184c3501ef5981b79c0c15c52146fef2)',
+              backgroundSize: 'cover',
+              opacity: 0.4,
+            }}
+          />
+        )}
+        {directions && <DirectionsRenderer directions={directions} />}
       </GoogleMap>
     </div>
   );
