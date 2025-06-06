@@ -12,11 +12,11 @@ export default function Home() {
   const [error, setError] = useState('');
 
   // This callback will receive summary from Map component
-  const handleRouteSummary = (summary: { distance: string; duration: string }) => {
-    setDistance(summary.distance);
-    setDuration(summary.duration);
-    setError('');
-  };
+  const handleRouteSummary = (distance: string, duration: string) => {
+  setDistance(distance);
+  setDuration(duration);
+  setError('');
+};
 
   return (
     <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
@@ -26,7 +26,7 @@ export default function Home() {
         {/* Map Tile */}
         <div className="bg-white shadow-lg rounded-2xl p-4">
           <h2 className="text-xl font-semibold mb-2">Map</h2>
-          <Map origin={origin} destination={destination} onRouteSummary={handleRouteSummary} />
+          <Map origin={origin} destination={destination} onSummaryUpdate={handleRouteSummary} />
         </div>
 
         {/* Input Tile */}

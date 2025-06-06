@@ -1,11 +1,7 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import {
-  GoogleMap,
-  useJsApiLoader,
-  DirectionsRenderer
-} from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
 
 interface MapProps {
   origin: string;
@@ -15,7 +11,7 @@ interface MapProps {
 
 const containerStyle = {
   width: '100%',
-  height: '300px'
+  height: '300px',
 };
 
 const center = { lat: 39.5, lng: -98.35 }; // Default center of US
@@ -26,21 +22,22 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: 'AIzaSyBVuvZK_WD_Qxxm-OOvqnJkfN1SzDpz8Do',
-    libraries: ['places']
+    libraries: ['places'],
   });
 
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
 
     const directionsService = new google.maps.DirectionsService();
+
     directionsService.route(
       {
         origin,
         destination,
-        travelMode: google.maps.TravelMode.DRIVING
+        travelMode: google.maps.TravelMode.DRIVING,
       },
       (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
+        if (status === 'OK' && result) {
           if (directionsRendererRef.current) {
             directionsRendererRef.current.setDirections(result);
           }
@@ -81,7 +78,7 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
         onLoad={handleLoad}
         options={{
           disableDefaultUI: true,
-          zoomControl: true
+          zoomControl: true,
         }}
       />
     </div>
