@@ -1,14 +1,16 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   GoogleMap,
   useJsApiLoader,
+  TrafficLayer,
 } from '@react-google-maps/api';
 
 interface MapProps {
   origin: string;
   destination: string;
+  showTraffic: boolean;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
 }
 
@@ -17,12 +19,10 @@ const containerStyle = {
   height: '300px',
 };
 
-const center = { lat: 39.5, lng: -98.35 }; // USA center
+const center = { lat: 39.5, lng: -98.35 };
 
-const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
+const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, onSummaryUpdate }) => {
   const mapRef = useRef<google.maps.Map | null>(null);
-  const directionsRendererRef = useRef<google.maps.DirectionsRenderer | null>(null);
-  const trafficLayerRef = useRef<google.maps.TrafficLayer | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
@@ -30,7 +30,7 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
   });
 
   useEffect(() => {
-    if (!isLoaded || !origin || !destination || !mapRef.current) return;
+    if (!isLoaded || !origin || !destination) return;
 
     const directionsService = new google.maps.DirectionsService();
     directionsService.route(
@@ -46,10 +46,6 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
       },
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
-          if (directionsRendererRef.current) {
-            directionsRendererRef.current.setDirections(result);
-          }
-
           const leg = result.routes[0].legs[0];
           const distanceText = leg.distance?.text || '';
           const durationText = leg.duration?.text || '';
@@ -65,13 +61,6 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
 
   const handleLoad = (map: google.maps.Map) => {
     mapRef.current = map;
-
-    directionsRendererRef.current = new google.maps.DirectionsRenderer({ suppressMarkers: false });
-    directionsRendererRef.current.setMap(map);
-
-    // ✅ Add Traffic Layer
-    trafficLayerRef.current = new google.maps.TrafficLayer();
-    trafficLayerRef.current.setMap(map);
   };
 
   if (loadError) {
@@ -94,7 +83,9 @@ const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
         zoom={4}
         onLoad={handleLoad}
         options={{ disableDefaultUI: true, zoomControl: true }}
-      />
+      >
+        {showTraffic && <TrafficLayer />}
+      </GoogleMap>
     </div>
   );
 };

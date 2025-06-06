@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Map from './components/Map';
-import Footer from './components/Footer'; // Header removed
+import Footer from './components/Footer'; // Header intentionally removed
 
 export default function Home() {
   const [origin, setOrigin] = useState('');
@@ -12,13 +12,14 @@ export default function Home() {
   const [trafficDelay, setTrafficDelay] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showTraffic, setShowTraffic] = useState(true); // NEW toggle state
 
   const handleRouteSummary = (distance: string, duration: string, traffic?: string) => {
-  setDistance(distance);
-  setDuration(duration);
-  setTrafficDelay(traffic || '');
-  setError('');
-};
+    setDistance(distance);
+    setDuration(duration);
+    setTrafficDelay(traffic || '');
+    setError('');
+  };
 
   const handleReset = () => {
     setOrigin('');
@@ -36,12 +37,18 @@ export default function Home() {
           {/* Map Tile */}
           <div className="bg-white shadow-lg rounded-2xl p-4">
             <h2 className="text-xl font-semibold mb-2">Map</h2>
-            <Map origin={origin} destination={destination} onSummaryUpdate={handleRouteSummary} />
+            <Map
+              origin={origin}
+              destination={destination}
+              showTraffic={showTraffic} // Pass to Map
+              onSummaryUpdate={handleRouteSummary}
+            />
           </div>
 
           {/* Input Tile */}
           <div className="bg-white shadow-lg rounded-2xl p-4">
             <h2 className="text-xl font-semibold mb-2">Route Input</h2>
+
             <input
               type="text"
               placeholder="Origin Address"
@@ -56,6 +63,19 @@ export default function Home() {
               onChange={(e) => setDestination(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
+
+            {/* Traffic Layer Toggle */}
+            <div className="flex items-center mb-3">
+              <input
+                type="checkbox"
+                id="trafficToggle"
+                checked={showTraffic}
+                onChange={() => setShowTraffic(!showTraffic)}
+                className="mr-2"
+              />
+              <label htmlFor="trafficToggle">Show Traffic Layer</label>
+            </div>
+
             <button
               onClick={() => {
                 if (!origin || !destination) {
