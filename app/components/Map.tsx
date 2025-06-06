@@ -36,12 +36,14 @@ const Map: React.FC<MapProps> = ({
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
+  const weatherOverlayRef = useRef<google.maps.ImageMapType | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries: ['places'],
   });
 
+  // Load directions
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
 
@@ -76,9 +78,38 @@ const Map: React.FC<MapProps> = ({
     );
   }, [isLoaded, origin, destination, onSummaryUpdate]);
 
+  // Handle map load
   const handleLoad = (map: google.maps.Map) => {
     mapRef.current = map;
   };
+
+  // Weather overlay effect
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Remove previous overlay
+    if (weatherOverlayRef.current) {
+      mapRef.current.overlayMapTypes.clear();
+      weatherOverlayRef.current = null;
+    }
+
+    if (showWeather) {
+      const weatherTileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=184c3501ef5981b79c0c15c52146fef2`;
+
+      const weatherOverlay = new google.maps.ImageMapType({
+        getTileUrl: (coord, zoom) => weatherTileUrl
+          .replace('{x}', coord.x.toString())
+          .replace('{y}', coord.y.toString())
+          .replace('{z}', zoom.toString()),
+        tileSize: new google.maps.Size(256, 256),
+        opacity: weatherOpacity,
+        name: 'WeatherOverlay',
+      });
+
+      mapRef.current.overlayMapTypes.insertAt(0, weatherOverlay);
+      weatherOverlayRef.current = weatherOverlay;
+    }
+  }, [showWeather, weatherLayer, weatherOpacity]);
 
   if (loadError) {
     return <div className="bg-red-100 text-red-800 p-4 rounded">Error loading map</div>;
@@ -92,8 +123,6 @@ const Map: React.FC<MapProps> = ({
     );
   }
 
-  const weatherTileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/4/4/6.png?appid=184c3501ef5981b79c0c15c52146fef2`;
-
   return (
     <div className="relative w-full h-[300px] bg-gray-200 rounded-xl overflow-hidden">
       <GoogleMap
@@ -106,22 +135,6 @@ const Map: React.FC<MapProps> = ({
         {showTraffic && <TrafficLayer />}
         {directions && <DirectionsRenderer directions={directions} />}
       </GoogleMap>
-
-      {showWeather && (
-        <div
-          style={{
-            position: 'absolute',
-            width: '100%',
-            height: '100%',
-            top: 0,
-            left: 0,
-            pointerEvents: 'none',
-            backgroundImage: `url(${weatherTileUrl})`,
-            backgroundSize: 'cover',
-            opacity: weatherOpacity,
-          }}
-        />
-      )}
     </div>
   );
 };
