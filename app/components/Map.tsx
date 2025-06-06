@@ -4,8 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import {
   GoogleMap,
   useJsApiLoader,
-  DirectionsRenderer,
-} from '@react-google-maps/api';
+} from '@react-google-maps/api'; // ✅ Removed DirectionsRenderer import
 
 interface MapProps {
   origin: string;
