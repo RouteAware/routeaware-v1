@@ -12,35 +12,34 @@ export default function Home() {
   const [error, setError] = useState('');
 
   const getRouteSummary = async () => {
-    setLoading(true);
-    setError('');
-    setDistance('');
-    setDuration('');
+  setLoading(true);
+  setError('');
+  setDistance('');
+  setDuration('');
 
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
-          origin
-        )}&destination=${encodeURIComponent(
-          destination
-        )}&key=AIzaSyBVuvZK_WD_Qxxm-OOvqnJkfN1SzDpz8Do`
-      );
+  try {
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/directions/json?origin=${encodeURIComponent(
+        origin
+      )}&destination=${encodeURIComponent(destination)}&key=AIzaSyBVuvZK_WD_Qxxm-OOvqnJkfN1SzDpz8Do`
+    );
 
-      const data = await response.json();
+    const data = await response.json();
+    console.log('Directions API response:', data); // ← now it's safe!
 
-      if (data.status === 'OK') {
-        const leg = data.routes[0].legs[0];
-        setDistance(leg.distance.text);
-        setDuration(leg.duration.text);
-      } else {
-        setError(`Google Directions API error: ${data.status}`);
-      }
-    } catch {
-      setError('Error fetching route. Please try again.');
-    } finally {
-      setLoading(false);
+    if (data.status === 'OK') {
+      const leg = data.routes[0].legs[0];
+      setDistance(leg.distance.text);
+      setDuration(leg.duration.text);
+    } else {
+      setError(`Google Directions API error: ${data.status}`);
     }
-  };
+  } catch (err) {
+    setError('Error fetching route. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
