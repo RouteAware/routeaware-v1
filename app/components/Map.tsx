@@ -1,16 +1,17 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   GoogleMap,
   useJsApiLoader,
+  DirectionsRenderer,
   TrafficLayer,
 } from '@react-google-maps/api';
 
 interface MapProps {
   origin: string;
   destination: string;
-  showTraffic: boolean;
+  showTraffic?: boolean; // ✅ Add this
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
 }
 
@@ -19,9 +20,11 @@ const containerStyle = {
   height: '300px',
 };
 
-const center = { lat: 39.5, lng: -98.35 };
+const center = { lat: 39.5, lng: -98.35 }; // Center of USA
 
-const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, onSummaryUpdate }) => {
+const Map: React.FC<MapProps> = ({ origin, destination, onSummaryUpdate }) => {
+  const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+
   const mapRef = useRef<google.maps.Map | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -33,6 +36,7 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, onSummaryUp
     if (!isLoaded || !origin || !destination) return;
 
     const directionsService = new google.maps.DirectionsService();
+
     directionsService.route(
       {
         origin,
@@ -46,6 +50,8 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, onSummaryUp
       },
       (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
+          setDirections(result);
+
           const leg = result.routes[0].legs[0];
           const distanceText = leg.distance?.text || '';
           const durationText = leg.duration?.text || '';
@@ -53,6 +59,7 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, onSummaryUp
 
           onSummaryUpdate(distanceText, durationText, trafficText);
         } else {
+          setDirections(null);
           onSummaryUpdate('', '', '');
         }
       }
@@ -84,7 +91,7 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, onSummaryUp
         onLoad={handleLoad}
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
-        {showTraffic && <TrafficLayer />}
+        {directions && <DirectionsRenderer directions={directions} />}
       </GoogleMap>
     </div>
   );
