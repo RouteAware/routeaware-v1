@@ -13,6 +13,8 @@ interface MapProps {
   destination: string;
   showTraffic?: boolean;
   showWeather?: boolean;
+  weatherLayer?: string;
+  weatherOpacity?: number;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
 }
 
@@ -23,7 +25,15 @@ const containerStyle = {
 
 const center = { lat: 39.5, lng: -98.35 }; // Center of USA
 
-const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, showWeather, onSummaryUpdate }) => {
+const Map: React.FC<MapProps> = ({
+  origin,
+  destination,
+  showTraffic,
+  showWeather,
+  weatherLayer = 'precipitation_new',
+  weatherOpacity = 0.5,
+  onSummaryUpdate,
+}) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
 
@@ -82,8 +92,10 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, showWeather
     );
   }
 
+  const weatherTileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/4/4/6.png?appid=184c3501ef5981b79c0c15c52146fef2`;
+
   return (
-    <div className="w-full h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[300px] bg-gray-200 rounded-xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={center}
@@ -92,24 +104,24 @@ const Map: React.FC<MapProps> = ({ origin, destination, showTraffic, showWeather
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
         {showTraffic && <TrafficLayer />}
-        {showWeather && (
-          <div
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              top: 0,
-              left: 0,
-              pointerEvents: 'none',
-              backgroundImage:
-                'url(https://tile.openweathermap.org/map/precipitation_new/4/4/6.png?appid=184c3501ef5981b79c0c15c52146fef2)',
-              backgroundSize: 'cover',
-              opacity: 0.4,
-            }}
-          />
-        )}
         {directions && <DirectionsRenderer directions={directions} />}
       </GoogleMap>
+
+      {showWeather && (
+        <div
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            top: 0,
+            left: 0,
+            pointerEvents: 'none',
+            backgroundImage: `url(${weatherTileUrl})`,
+            backgroundSize: 'cover',
+            opacity: weatherOpacity,
+          }}
+        />
+      )}
     </div>
   );
 };

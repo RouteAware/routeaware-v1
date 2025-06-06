@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import Map from './components/Map';
+import dynamic from 'next/dynamic';
 import Footer from './components/Footer';
+
+const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
 export default function Home() {
   const [origin, setOrigin] = useState('');
@@ -14,6 +16,8 @@ export default function Home() {
   const [error, setError] = useState('');
   const [showTraffic, setShowTraffic] = useState(true);
   const [showWeather, setShowWeather] = useState(false);
+  const [weatherLayer, setWeatherLayer] = useState('precipitation_new');
+  const [weatherOpacity, setWeatherOpacity] = useState(0.5);
 
   const handleRouteSummary = (distance: string, duration: string, traffic?: string) => {
     setDistance(distance);
@@ -40,7 +44,7 @@ export default function Home() {
             <h2 className="text-xl font-semibold mb-2">Map</h2>
 
             {/* Layer Toggles */}
-            <div className="flex gap-4 mb-3">
+            <div className="flex flex-wrap gap-4 mb-3">
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -57,6 +61,29 @@ export default function Home() {
                 />
                 <span>Show Weather</span>
               </label>
+              {showWeather && (
+                <>
+                  <select
+                    className="px-2 py-1 border border-gray-300 rounded"
+                    value={weatherLayer}
+                    onChange={(e) => setWeatherLayer(e.target.value)}
+                  >
+                    <option value="precipitation_new">Precipitation</option>
+                    <option value="clouds_new">Clouds</option>
+                    <option value="temp_new">Temperature</option>
+                    <option value="wind_new">Wind</option>
+                  </select>
+                  <select
+                    className="px-2 py-1 border border-gray-300 rounded"
+                    value={weatherOpacity}
+                    onChange={(e) => setWeatherOpacity(parseFloat(e.target.value))}
+                  >
+                    <option value="0.3">Low</option>
+                    <option value="0.5">Medium</option>
+                    <option value="0.8">High</option>
+                  </select>
+                </>
+              )}
             </div>
 
             <Map
@@ -65,6 +92,8 @@ export default function Home() {
               onSummaryUpdate={handleRouteSummary}
               showTraffic={showTraffic}
               showWeather={showWeather}
+              weatherLayer={weatherLayer}
+              weatherOpacity={weatherOpacity}
             />
           </div>
 
