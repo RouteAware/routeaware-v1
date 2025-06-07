@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
-import Footer from './components/Footer';
 import { calculateETA } from './utils/calculateETA';
 import { RouteWeatherAdvisory } from './utils/fetchBoundingBoxAlerts';
 

@@ -41,9 +41,8 @@ export default function NewsPage() {
       }
     };
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchFeeds();
-  }, []);
+  }, [feeds]); // ✅ Clean fix here
 
   return (
     <div className="bg-white shadow-lg rounded-2xl p-6">
