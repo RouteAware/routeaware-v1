@@ -8,6 +8,8 @@ import {
   TrafficLayer,
 } from '@react-google-maps/api';
 
+import { fetchBoundingBoxAlerts, RouteWeatherAdvisory } from '../utils/fetchBoundingBoxAlerts';
+
 interface MapProps {
   origin: string;
   destination: string;
@@ -16,6 +18,7 @@ interface MapProps {
   weatherLayer?: string;
   weatherOpacity?: number;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
+  onAlertsUpdate?: (alerts: RouteWeatherAdvisory[]) => void; // New callback
 }
 
 const containerStyle = {
@@ -33,6 +36,7 @@ const Map: React.FC<MapProps> = ({
   weatherLayer = 'precipitation_new',
   weatherOpacity = 0.5,
   onSummaryUpdate,
+  onAlertsUpdate,
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
@@ -60,7 +64,7 @@ const Map: React.FC<MapProps> = ({
         },
         provideRouteAlternatives: false,
       },
-      (result, status) => {
+      async (result, status) => {
         if (status === google.maps.DirectionsStatus.OK && result) {
           setDirections(result);
 
@@ -70,13 +74,28 @@ const Map: React.FC<MapProps> = ({
           const trafficText = leg.duration_in_traffic?.text || '';
 
           onSummaryUpdate(distanceText, durationText, trafficText);
+
+          // Bounding box logic
+          const bounds = new google.maps.LatLngBounds();
+          result.routes[0].overview_path.forEach((coord) => bounds.extend(coord));
+
+          const ne = bounds.getNorthEast();
+          const sw = bounds.getSouthWest();
+
+          if (onAlertsUpdate) {
+            const alerts = await fetchBoundingBoxAlerts(
+              sw.lat(), sw.lng(), ne.lat(), ne.lng()
+            );
+            onAlertsUpdate(alerts);
+          }
         } else {
           setDirections(null);
           onSummaryUpdate('', '', '');
+          if (onAlertsUpdate) onAlertsUpdate([]); // Clear alerts on error
         }
       }
     );
-  }, [isLoaded, origin, destination, onSummaryUpdate]);
+  }, [isLoaded, origin, destination, onSummaryUpdate, onAlertsUpdate]);
 
   // Handle map load
   const handleLoad = (map: google.maps.Map) => {

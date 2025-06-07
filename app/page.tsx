@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import Footer from './components/Footer';
 import { calculateETA } from './utils/calculateETA';
+import { RouteWeatherAdvisory } from './utils/fetchBoundingBoxAlerts';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
@@ -23,6 +24,7 @@ export default function Home() {
   const [pickupDate, setPickupDate] = useState('');
   const [dailyMiles, setDailyMiles] = useState('');
   const [estimatedArrival, setEstimatedArrival] = useState('');
+  const [weatherAlerts, setWeatherAlerts] = useState<RouteWeatherAdvisory[]>([]); // ✅ Correctly placed
 
   const handleRouteSummary = (distance: string, duration: string, traffic?: string) => {
     setDistance(distance);
@@ -44,6 +46,7 @@ export default function Home() {
     setPickupDate('');
     setDailyMiles('');
     setEstimatedArrival('');
+    setWeatherAlerts([]);
     setError('');
   };
 
@@ -102,6 +105,7 @@ export default function Home() {
               origin={origin}
               destination={destination}
               onSummaryUpdate={handleRouteSummary}
+              onAlertsUpdate={(alerts) => setWeatherAlerts(alerts)}
               showTraffic={showTraffic}
               showWeather={showWeather}
               weatherLayer={weatherLayer}
@@ -157,6 +161,7 @@ export default function Home() {
                 setDuration('');
                 setTrafficDelay('');
                 setEstimatedArrival('');
+                setWeatherAlerts([]);
                 setError('');
                 setTimeout(() => setLoading(false), 1000);
               }}
@@ -189,6 +194,27 @@ export default function Home() {
               <p><strong>Estimated Time:</strong> {duration}</p>
               {trafficDelay && <p><strong>Time with Traffic:</strong> {trafficDelay}</p>}
               {estimatedArrival && <p><strong>Estimated Arrival:</strong> {estimatedArrival}</p>}
+
+              {weatherAlerts.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-lg font-semibold">Weather Alerts:</h3>
+                  <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
+                    {weatherAlerts.map((alert, index) => (
+                      <li key={index}>
+                        <strong>{alert.event}</strong>{' '}
+                        <a
+                          href={alert.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="underline text-blue-600"
+                        >
+                          Details
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>
