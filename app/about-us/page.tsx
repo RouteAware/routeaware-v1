@@ -47,10 +47,10 @@ const AboutUs = () => {
       </p>
 
       <p className="mb-4 text-gray-800 leading-relaxed text-left">
-        Thank you for joining us on this journey. Our mission is simple: help you Be RouteAware—every mile of the way.
+        Thank you for joining us on this journey. Our mission is simple: help you Be RouteAware&mdash;every mile of the way.
       </p>
 
-      <p className="text-sm text-gray-500 italic text-left">– The RouteAware Team</p>
+      <p className="text-sm text-gray-500 italic text-left">&mdash; The RouteAware Team</p>
     </div>
   );
 };

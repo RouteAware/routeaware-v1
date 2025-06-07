@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { FaCloudSunRain, FaBell, FaEdit, FaTrash, FaTruck, FaRoute } from 'react-icons/fa';
+import { FaCloudSunRain, FaEdit, FaTrash, FaTruck, FaRoute } from 'react-icons/fa';
 
 export default function SavedLoadsPage() {
   const placeholderLoads = [
