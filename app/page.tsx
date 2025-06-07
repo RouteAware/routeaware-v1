@@ -24,7 +24,7 @@ export default function Home() {
   const [pickupDate, setPickupDate] = useState('');
   const [dailyMiles, setDailyMiles] = useState('');
   const [estimatedArrival, setEstimatedArrival] = useState('');
-  const [weatherAlerts, setWeatherAlerts] = useState<RouteWeatherAdvisory[]>([]); // ✅ Correctly placed
+  const [weatherAlerts, setWeatherAlerts] = useState<RouteWeatherAdvisory[]>([]);
 
   const handleRouteSummary = (distance: string, duration: string, traffic?: string) => {
     setDistance(distance);
