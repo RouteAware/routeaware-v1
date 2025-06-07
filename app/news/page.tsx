@@ -1,30 +1,38 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Parser from 'rss-parser';
+
+type RSSItem = {
+  title: string;
+  link: string;
+  pubDate: string;
+  contentSnippet?: string;
+  content?: string;
+};
 
 export default function NewsPage() {
-  const [articles, setArticles] = useState<any[]>([]);
+  const [articles, setArticles] = useState<RSSItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const parser = new Parser();
 
   const feeds = [
     'https://www.freightwaves.com/feed',
     'https://www.truckinginfo.com/rss/all.aspx',
     'https://www.transportdive.com/feeds/news/',
-    'https://www.ttnews.com/rss/front/rss.xml'
+    'https://www.ttnews.com/rss/front/rss.xml',
   ];
 
   useEffect(() => {
     const fetchFeeds = async () => {
       try {
-        const feedData: any[] = [];
+        const feedData: RSSItem[] = [];
         for (const feed of feeds) {
           const response = await fetch(`/api/rss?url=${encodeURIComponent(feed)}`);
           const result = await response.json();
           feedData.push(...result.items);
         }
-        feedData.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+        feedData.sort(
+          (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+        );
         setArticles(feedData);
       } catch (err) {
         console.error('Error fetching RSS feeds:', err);
@@ -33,6 +41,7 @@ export default function NewsPage() {
       }
     };
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     fetchFeeds();
   }, []);
 
@@ -59,7 +68,9 @@ export default function NewsPage() {
                 </a>
               </h2>
               <p className="text-sm text-gray-600 mb-1">
-                {article.pubDate ? new Date(article.pubDate).toLocaleString() : 'No date'}
+                {article.pubDate
+                  ? new Date(article.pubDate).toLocaleString()
+                  : 'No date'}
               </p>
               <p className="text-sm text-gray-800 line-clamp-3">
                 {article.contentSnippet || article.content || 'No summary available.'}
