@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://berouteaware.com'),
   icons: {
     icon: '/favicon.ico',
+    shortcut: '/favicon.ico', // <- Added for extra browser compatibility
   },
   openGraph: {
     title: 'RouteAware',
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
     siteName: 'RouteAware',
     images: [
       {
-        url: 'https://berouteaware.com/og-image.png', // full URL is safest
+        url: 'https://berouteaware.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'RouteAware Logo and Slogan',
