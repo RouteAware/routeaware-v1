@@ -1,5 +1,7 @@
 'use client';
 
+import React from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import clsx from 'clsx';
@@ -7,10 +9,12 @@ import clsx from 'clsx';
 const navItems = [
   { label: 'Dashboard', href: '/dashboard' },
   { label: 'Over the Road', href: '/' },
-  { label: 'Drayage', href: '/drayage' },
   { label: 'Air Cargo', href: '/air-cargo' },
-  { label: 'News', href: '/news' },
-  { label: 'Coming Soon', href: '/coming-soon' },
+  { label: 'Drayage', href: '/drayage' },
+  { label: 'Profile', href: '/profile' },
+  { label: 'About', href: '/about-us' },
+  { label: 'Advisories', href: '/all-active-advisories' },
+  { label: 'Settings', href: '/settings' },
 ];
 
 export default function Header() {
