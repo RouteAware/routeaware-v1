@@ -1,6 +1,6 @@
-export const dynamic = 'force-dynamic'; // Ensure SSR on Vercel edge
+'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 type RSSItem = {
   title: string;
@@ -10,7 +10,10 @@ type RSSItem = {
   content?: string;
 };
 
-export default async function NewsPage() {
+export default function NewsPage() {
+  const [articles, setArticles] = useState<RSSItem[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const feeds = [
     'https://www.freightwaves.com/feed',
     'https://www.truckinginfo.com/rss/all.aspx',
@@ -18,31 +21,38 @@ export default async function NewsPage() {
     'https://www.ttnews.com/rss/front/rss.xml',
   ];
 
-  const articles: RSSItem[] = [];
+  useEffect(() => {
+    const fetchFeeds = async () => {
+      try {
+        const allArticles: RSSItem[] = [];
 
-  try {
-    const feedPromises = feeds.map(feed =>
-      fetch(`/api/rss?url=${encodeURIComponent(feed)}`).then(res => res.json())
-    );
-    const feedResults = await Promise.all(feedPromises);
+        for (const feed of feeds) {
+          const response = await fetch(`/api/rss?url=${encodeURIComponent(feed)}`);
+          const result = await response.json();
+          if (result.items) allArticles.push(...result.items);
+        }
 
-    feedResults.forEach(result => {
-      if (Array.isArray(result.items)) {
-        articles.push(...(result.items as RSSItem[]));
+        allArticles.sort(
+          (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+        );
+
+        setArticles(allArticles);
+      } catch (err) {
+        console.error('Error fetching feeds:', err);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    articles.sort(
-      (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
-    );
-  } catch (err) {
-    console.error('Failed to load feeds:', err);
-  }
+    fetchFeeds();
+  }, []);
 
   return (
     <div className="bg-white shadow-lg rounded-2xl p-6">
       <h1 className="text-2xl font-bold mb-4 text-blue-700">🚛 Industry News</h1>
-      {articles.length === 0 ? (
+      {loading ? (
+        <p className="text-gray-600">Loading news...</p>
+      ) : articles.length === 0 ? (
         <p className="text-gray-600">No articles available.</p>
       ) : (
         <div className="grid gap-4">
