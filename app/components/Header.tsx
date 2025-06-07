@@ -11,6 +11,7 @@ const navItems = [
   { label: 'Over the Road', href: '/' },
   { label: 'Air Cargo', href: '/air-cargo' },
   { label: 'Drayage', href: '/drayage' },
+  { label: 'News', href: '/news' },                // ✅ Inserted here
   { label: 'Profile', href: '/profile' },
   { label: 'About', href: '/about-us' },
   { label: 'Advisories', href: '/all-active-advisories' },
@@ -24,7 +25,12 @@ export default function Header() {
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-screen-xl mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center">
-          <Image src="/logo.png" alt="RouteAware Logo" width={40} height={40} />
+          <Image
+            src="/logo.png"
+            alt="RouteAware Logo"
+            width={200} // ⬅️ 3x size
+            height={200}
+          />
         </Link>
         <nav className="flex space-x-6">
           {navItems.map(({ label, href }) => (
