@@ -2,30 +2,24 @@
 
 import React, { useState } from 'react';
 
+type TrackingResponse = Record<string, unknown> | { error: string };
+
 export default function DrayagePage() {
   const [vesselId, setVesselId] = useState('');
-  type TrackingResponse = {
-  error?: string;
-  [key: string]: any; // keep flexible for unknown properties
-};
-
-const [trackingData, setTrackingData] = useState<TrackingResponse | null>(null);
+  const [trackingData, setTrackingData] = useState<TrackingResponse | null>(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleTrack = async () => {
     if (!vesselId.trim()) return;
-    setLoading(true);
-    setError('');
-    setTrackingData(null);
 
+    setLoading(true);
     try {
-      const res = await fetch(`/api/track-ship?vessel=${encodeURIComponent(vesselId.trim())}`);
+      const res = await fetch(`/api/track-ship?vessel=${encodeURIComponent(vesselId)}`);
       const data = await res.json();
-      if (data.error) throw new Error(data.error);
       setTrackingData(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch tracking data');
+    } catch (err) {
+      console.error('Tracking error:', err);
+      setTrackingData({ error: 'Failed to fetch tracking data' });
     } finally {
       setLoading(false);
     }
@@ -34,37 +28,37 @@ const [trackingData, setTrackingData] = useState<TrackingResponse | null>(null);
   return (
     <div className="bg-white shadow-lg rounded-2xl p-6">
       <h1 className="text-2xl font-bold mb-4 text-blue-700">🚢 Drayage Tracker</h1>
-      <p className="text-gray-700 mb-4">Enter a vessel name or IMO number to track its voyage.</p>
+      <p className="text-gray-700 mb-4">
+        Enter a vessel or ship number to retrieve current voyage information.
+      </p>
 
-      <div className="flex flex-col sm:flex-row gap-2 mb-6">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
           type="text"
           value={vesselId}
           onChange={(e) => setVesselId(e.target.value)}
-          placeholder="e.g. CMA CGM LAPEROUSE"
-          className="border border-gray-300 rounded-lg px-4 py-2 w-full sm:w-64"
+          placeholder="Enter vessel or IMO number"
+          className="border rounded px-4 py-2 w-full sm:w-auto"
         />
         <button
           onClick={handleTrack}
-          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded disabled:opacity-50"
-          disabled={loading}
+          className="bg-blue-700 hover:bg-blue-800 text-white px-6 py-2 rounded"
         >
-          {loading ? 'Searching...' : 'Track Vessel'}
+          Track Vessel
         </button>
       </div>
 
-      {error && <p className="text-red-600 mb-4">{error}</p>}
+      {loading && <p className="text-gray-500">Loading...</p>}
 
-      {trackingData && !error && (
-        <div className="bg-gray-50 border rounded-lg p-4 space-y-2">
-          <p><strong>Vessel:</strong> {trackingData.vessel}</p>
-          <p><strong>Status:</strong> {trackingData.status}</p>
-          <p><strong>Origin:</strong> {trackingData.origin}</p>
-          <p><strong>Destination:</strong> {trackingData.destination}</p>
-          <p><strong>ETA:</strong> {new Date(trackingData.eta).toLocaleString()}</p>
-          <p className="text-sm text-gray-500">
-            Last Updated: {new Date(trackingData.lastUpdated).toLocaleString()}
-          </p>
+      {trackingData && (
+        <div className="mt-4 bg-gray-50 p-4 rounded border">
+          {'error' in trackingData ? (
+            <p className="text-red-600">{(trackingData as { error: string }).error}</p>
+          ) : (
+            <pre className="text-sm whitespace-pre-wrap">
+              {JSON.stringify(trackingData, null, 2)}
+            </pre>
+          )}
         </div>
       )}
     </div>

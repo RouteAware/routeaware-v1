@@ -2,17 +2,18 @@
 
 import React, { useState } from 'react';
 
-export default function AirCargoPage() {
-  const [flightNum, setFlightNum] = useState('');
-  type FlightData = {
-  callsign?: string;
-  estDepartureAirport?: string;
-  estArrivalAirport?: string;
-  firstSeen?: number;
-  lastSeen?: number;
+type FlightData = {
+  icao24: string;
+  firstSeen: number;
+  estDepartureAirport: string | null;
+  lastSeen: number;
+  estArrivalAirport: string | null;
+  callsign: string | null;
 };
 
-const [flights, setFlights] = useState<FlightData[]>([]);
+export default function AirCargoPage() {
+  const [flightNum, setFlightNum] = useState('');
+  const [flights, setFlights] = useState<FlightData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -40,7 +41,6 @@ const [flights, setFlights] = useState<FlightData[]>([]);
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg">
       <h1 className="text-2xl font-bold text-blue-700 mb-4">✈️ Air Cargo Tracker</h1>
-
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
         <input
           value={flightNum}
