@@ -4,7 +4,12 @@ import React, { useState } from 'react';
 
 export default function DrayagePage() {
   const [vesselId, setVesselId] = useState('');
-  const [trackingData, setTrackingData] = useState<any>(null);
+  type TrackingResponse = {
+  error?: string;
+  [key: string]: any; // keep flexible for unknown properties
+};
+
+const [trackingData, setTrackingData] = useState<TrackingResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

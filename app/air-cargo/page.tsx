@@ -4,7 +4,15 @@ import React, { useState } from 'react';
 
 export default function AirCargoPage() {
   const [flightNum, setFlightNum] = useState('');
-  const [flights, setFlights] = useState<any[]>([]);
+  type FlightData = {
+  callsign?: string;
+  estDepartureAirport?: string;
+  estArrivalAirport?: string;
+  firstSeen?: number;
+  lastSeen?: number;
+};
+
+const [flights, setFlights] = useState<FlightData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 

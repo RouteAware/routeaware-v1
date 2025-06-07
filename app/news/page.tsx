@@ -14,7 +14,7 @@ export default function NewsPage() {
   const [articles, setArticles] = useState<RSSItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const feeds = [
+  const feeds: string[] = [
     'https://www.freightwaves.com/feed',
     'https://www.truckinginfo.com/rss/all.aspx',
     'https://www.transportdive.com/feeds/news/',
@@ -45,7 +45,8 @@ export default function NewsPage() {
     };
 
     fetchFeeds();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // feeds is static and won't change, so safe to skip
 
   return (
     <div className="bg-white shadow-lg rounded-2xl p-6">
