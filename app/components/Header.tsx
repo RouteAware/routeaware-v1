@@ -1,45 +1,42 @@
 'use client';
 
-import React from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import clsx from 'clsx';
 
-const Header = () => {
+const navItems = [
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Over the Road', href: '/' },
+  { label: 'Drayage', href: '/drayage' },
+  { label: 'Air Cargo', href: '/air-cargo' },
+  { label: 'News', href: '/news' },
+  { label: 'Coming Soon', href: '/coming-soon' },
+];
+
+export default function Header() {
+  const pathname = usePathname();
+
   return (
-    <header className="w-full bg-white shadow-md px-6 py-4 mb-6 rounded-b-2xl sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-        {/* Logo */}
-        <Link href="/" passHref aria-label="RouteAware Home">
-          <div className="flex items-center space-x-2 cursor-pointer">
-            <Image
-              src="/logo.png"
-              alt="RouteAware Logo"
-              width={120}
-              height={40}
-              className="h-auto w-auto"
-              priority
-            />
-          </div>
+    <header className="bg-white shadow-md sticky top-0 z-50">
+      <div className="max-w-screen-xl mx-auto px-4 py-4 flex justify-between items-center">
+        <Link href="/" className="text-2xl font-bold text-blue-700">
+          RouteAware
         </Link>
-
-        {/* Navigation */}
-        <nav className="flex flex-wrap justify-center md:justify-end items-center gap-3 text-sm font-medium text-blue-700">
-          <Link href="/dashboard" className="hover:underline transition">Dashboard</Link>
-          <Link href="/" className="hover:underline transition">Over the Road</Link>
-          <Link href="/drayage" className="hover:underline transition">Drayage</Link>
-          <Link href="/air-cargo" className="hover:underline transition">Air Cargo</Link>
-          <Link href="/saved-loads" className="hover:underline transition">Saved Loads</Link>
-          <Link href="/all-active-advisories" className="hover:underline transition">Advisories</Link>
-          <Link href="/all-available-traffic-cams" className="hover:underline transition">Traffic Cams</Link>
-          <Link href="/news" className="hover:underline transition">News</Link>
-          <Link href="/profile" className="hover:underline transition">Profile</Link>
-          <Link href="/settings" className="hover:underline transition">Settings</Link>
-          <Link href="/about-us" className="hover:underline transition">About</Link>
-          <Link href="/coming-soon" className="hover:underline transition">Coming Soon</Link>
+        <nav className="flex space-x-6">
+          {navItems.map(({ label, href }) => (
+            <Link
+              key={href}
+              href={href}
+              className={clsx(
+                'text-sm font-medium hover:text-blue-700 transition',
+                pathname === href ? 'text-blue-700 underline' : 'text-gray-700'
+              )}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
       </div>
     </header>
   );
-};
-
-export default Header;
+}
