@@ -16,19 +16,21 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'RouteAware',
-  description: 'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
+  description:
+    'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
+  metadataBase: new URL('https://berouteaware.com'),
   icons: {
     icon: '/favicon.ico',
   },
-  metadataBase: new URL('https://berouteaware.com'),
   openGraph: {
     title: 'RouteAware',
-    description: 'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
+    description:
+      'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
     url: 'https://berouteaware.com',
     siteName: 'RouteAware',
     images: [
       {
-        url: '/og-image.png',
+        url: 'https://berouteaware.com/og-image.png', // full URL is safest
         width: 1200,
         height: 630,
         alt: 'RouteAware Logo and Slogan',
@@ -39,8 +41,9 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'RouteAware',
-    description: 'Plan smarter routes with live weather, traffic alerts, and tracking tools.',
-    images: ['/og-image.png'],
+    description:
+      'Plan smarter routes with live weather, traffic alerts, and tracking tools.',
+    images: ['https://berouteaware.com/og-image.png'],
   },
 };
 
