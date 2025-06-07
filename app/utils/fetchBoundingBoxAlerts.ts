@@ -7,20 +7,35 @@ export interface RouteWeatherAdvisory {
   link: string;
 }
 
+interface AlertFeature {
+  id: string;
+  geometry: {
+    type: string;
+    coordinates: [number, number];
+  };
+  properties: {
+    event: string;
+    headline: string;
+    description: string;
+    severity: string;
+    uri: string;
+  };
+}
+
 export async function fetchBoundingBoxAlerts(
   minLat: number,
   minLng: number,
   maxLat: number,
   maxLng: number
 ): Promise<RouteWeatherAdvisory[]> {
-  const url = `https://api.weather.gov/alerts/active?status=actual&message_type=alert&point=${minLat},${minLng}`;
+  const url = `https://api.weather.gov/alerts/active?status=actual&message_type=alert`;
 
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'RouteAwareApp (contact@berouteaware.com)', // NWS recommends custom UA
-        'Accept': 'application/geo+json'
-      }
+        'User-Agent': 'RouteAwareApp (contact@berouteaware.com)',
+        'Accept': 'application/geo+json',
+      },
     });
 
     if (!res.ok) {
@@ -32,12 +47,10 @@ export async function fetchBoundingBoxAlerts(
 
     if (!data.features || !Array.isArray(data.features)) return [];
 
-    // Filter alerts within the bounding box
     const alerts = data.features
-      .map((feature: any): RouteWeatherAdvisory | null => {
+      .map((feature: AlertFeature): RouteWeatherAdvisory | null => {
         const coords = feature.geometry?.coordinates;
 
-        // Ensure it’s a point and within box
         if (
           coords &&
           feature.geometry.type === 'Point' &&
@@ -52,13 +65,15 @@ export async function fetchBoundingBoxAlerts(
             headline: feature.properties.headline,
             description: feature.properties.description,
             severity: feature.properties.severity,
-            link: feature.properties?.uri || ''
+            link: feature.properties.uri || '',
           };
         }
 
         return null;
       })
-      .filter((a: RouteWeatherAdvisory | null) => a !== null) as RouteWeatherAdvisory[];
+      .filter(
+        (a: RouteWeatherAdvisory | null): a is RouteWeatherAdvisory => a !== null
+      );
 
     return alerts;
   } catch (err) {

@@ -2,6 +2,22 @@
 
 import React, { useEffect, useState } from 'react';
 
+interface NWSFeature {
+  id: string;
+  properties: {
+    areaDesc: string;
+    event: string;
+    severity: string;
+    headline: string;
+    description: string;
+    instruction: string;
+    sent: string;
+    effective: string;
+    ends: string;
+    uri: string;
+  };
+}
+
 interface Advisory {
   id: string;
   areaDesc: string;
@@ -28,7 +44,7 @@ const AllActiveAdvisories = () => {
         const res = await fetch('https://api.weather.gov/alerts/active');
         if (!res.ok) throw new Error('Failed to fetch advisories');
         const data = await res.json();
-        const alerts = data.features.map((f: any) => ({
+        const alerts: Advisory[] = data.features.map((f: NWSFeature) => ({
           id: f.id,
           areaDesc: f.properties.areaDesc,
           event: f.properties.event,
@@ -43,8 +59,12 @@ const AllActiveAdvisories = () => {
         }));
         setAdvisories(alerts);
         setLoading(false);
-      } catch (err: any) {
-        setError(err.message);
+      } catch (err) {
+        if (err instanceof Error) {
+          setError(err.message);
+        } else {
+          setError('Unknown error');
+        }
         setLoading(false);
       }
     };
