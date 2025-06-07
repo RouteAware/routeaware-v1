@@ -24,12 +24,14 @@ const Header = () => {
 
         {/* Navigation */}
         <nav className="flex flex-wrap justify-center md:justify-end items-center gap-3 text-sm font-medium text-blue-700">
-          <Link href="/" className="hover:underline transition">Home</Link>
           <Link href="/dashboard" className="hover:underline transition">Dashboard</Link>
-          <Link href="/news" className="hover:underline transition">News</Link> {/* ✅ New Link */}
+          <Link href="/" className="hover:underline transition">Over the Road</Link>
+          <Link href="/drayage" className="hover:underline transition">Drayage</Link>
+          <Link href="/air-cargo" className="hover:underline transition">Air Cargo</Link>
           <Link href="/saved-loads" className="hover:underline transition">Saved Loads</Link>
           <Link href="/all-active-advisories" className="hover:underline transition">Advisories</Link>
           <Link href="/all-available-traffic-cams" className="hover:underline transition">Traffic Cams</Link>
+          <Link href="/news" className="hover:underline transition">News</Link>
           <Link href="/profile" className="hover:underline transition">Profile</Link>
           <Link href="/settings" className="hover:underline transition">Settings</Link>
           <Link href="/about-us" className="hover:underline transition">About</Link>
