@@ -1,5 +1,6 @@
 import './globals.css';
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
@@ -66,7 +67,8 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ClientWrapper>{children}</ClientWrapper>
         <Footer />
-        <Analytics /> {/* ✅ Analytics now in use */}
+        <Analytics /> {/* ✅ Analytics enabled */}
+        <SpeedInsights /> {/* ✅ Vercel Speed Insights enabled */}
       </body>
     </html>
   );
