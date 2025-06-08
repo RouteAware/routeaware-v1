@@ -1,28 +1,48 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
+
+const containerStyle = {
+  width: '100%',
+  height: '400px',
+};
+
+const defaultCenter = {
+  lat: 39.8283,
+  lng: -98.5795,
+};
 
 type FlightData = {
   icao24: string;
-  firstSeen: number;
-  estDepartureAirport: string | null;
-  lastSeen: number;
-  estArrivalAirport: string | null;
   callsign: string | null;
+  origin_country: string;
+  time_position: number | null;
+  last_contact: number;
+  longitude: number | null;
+  latitude: number | null;
+  baro_altitude: number | null;
+  on_ground: boolean;
+  velocity: number | null;
+  true_track?: number | null;
 };
 
 export default function AirCargoPage() {
   const [flightNum, setFlightNum] = useState<string>('');
-  const [flights, setFlights] = useState<FlightData[]>([]);
+  const [flight, setFlight] = useState<FlightData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
+
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
+  });
 
   const searchFlight = async (): Promise<void> => {
     if (!flightNum.trim()) return;
 
     setLoading(true);
     setError('');
-    setFlights([]);
+    setFlight(null);
 
     try {
       const res = await fetch(`/api/flight?flight=${encodeURIComponent(flightNum.trim())}`);
@@ -30,16 +50,37 @@ export default function AirCargoPage() {
 
       if (!res.ok) throw new Error(data.error || 'Unknown error');
 
-      setFlights(data.flights ?? []);
+      const firstMatch = (data.flights ?? []).find((f: any[]) => f[1]?.toUpperCase().includes(flightNum.trim().toUpperCase()));
+      if (!firstMatch) throw new Error('No matching flights found.');
+
+      setFlight({
+        icao24: firstMatch[0],
+        callsign: firstMatch[1],
+        origin_country: firstMatch[2],
+        time_position: firstMatch[3],
+        last_contact: firstMatch[4],
+        longitude: firstMatch[5],
+        latitude: firstMatch[6],
+        baro_altitude: firstMatch[7],
+        on_ground: firstMatch[8],
+        velocity: firstMatch[9],
+        true_track: firstMatch[10],
+      });
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Failed to fetch flight data';
+      const message = err instanceof Error ? err.message : 'Failed to fetch flight data';
       console.error('Flight fetch error:', message);
       setError(message);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (flightNum.trim()) searchFlight();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [flightNum]);
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg">
@@ -63,38 +104,51 @@ export default function AirCargoPage() {
 
       {error && <p className="text-red-600 mb-4">{error}</p>}
 
-      {flights.length > 0 ? (
+      {isLoaded && flight && flight.latitude && flight.longitude ? (
         <div className="space-y-4">
-          {flights.map((f, i) => (
-            <div
-              key={`${f.icao24}-${f.firstSeen}-${i}`}
-              className="border border-gray-200 p-4 rounded-xl bg-gray-50"
-            >
-              <h2 className="font-semibold text-blue-800 mb-1">
-                {f.callsign ?? 'Unknown Flight'}
-              </h2>
-              <p className="text-sm text-gray-600">
-                From ICAO: <strong>{f.estDepartureAirport ?? 'N/A'}</strong> → To ICAO:{' '}
-                <strong>{f.estArrivalAirport ?? 'N/A'}</strong>
-              </p>
-              <p className="text-sm text-gray-600">
-                Departure:{' '}
-                {f.firstSeen
-                  ? new Date(f.firstSeen * 1000).toLocaleString()
-                  : 'N/A'}
-              </p>
-              <p className="text-sm text-gray-600">
-                Arrival:{' '}
-                {f.lastSeen
-                  ? new Date(f.lastSeen * 1000).toLocaleString()
-                  : 'N/A'}
-              </p>
-            </div>
-          ))}
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={{ lat: flight.latitude, lng: flight.longitude }}
+            zoom={6}
+          >
+            <Marker position={{ lat: flight.latitude, lng: flight.longitude }}>
+              <InfoWindow position={{ lat: flight.latitude, lng: flight.longitude }}>
+                <div className="text-sm">
+                  <p><strong>{flight.callsign ?? 'Unknown Flight'}</strong></p>
+                  <p>From: {flight.origin_country}</p>
+                  {flight.velocity && <p>Speed: {Math.round(flight.velocity)} m/s</p>}
+                  {flight.true_track && <p>Heading: {Math.round(flight.true_track)}°</p>}
+                </div>
+              </InfoWindow>
+            </Marker>
+          </GoogleMap>
+
+          <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
+            <h2 className="font-semibold text-blue-800 mb-1">
+              {flight.callsign ?? 'Unknown Flight'}
+            </h2>
+            <p className="text-sm text-gray-600">
+              From: <strong>{flight.origin_country}</strong>
+            </p>
+            <p className="text-sm text-gray-600">
+              Last Seen:{' '}
+              {flight.last_contact
+                ? new Date(flight.last_contact * 1000).toLocaleString()
+                : 'N/A'}
+            </p>
+            <p className="text-sm text-gray-600">
+              Altitude: {flight.baro_altitude ? `${Math.round(flight.baro_altitude)} m` : 'N/A'}
+            </p>
+            <p className="text-sm text-gray-600">
+              Velocity: {flight.velocity ? `${Math.round(flight.velocity)} m/s` : 'N/A'}
+            </p>
+            <p className="text-sm text-gray-600">
+              On Ground: {flight.on_ground ? 'Yes' : 'No'}
+            </p>
+          </div>
         </div>
       ) : (
-        !loading &&
-        !error && <p className="text-gray-500">No recent flight history found.</p>
+        !loading && !error && <p className="text-gray-500">No recent flight data found.</p>
       )}
     </div>
   );
