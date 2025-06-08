@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
 
 const containerStyle = {
@@ -8,10 +8,25 @@ const containerStyle = {
   height: '400px',
 };
 
-const defaultCenter = {
-  lat: 39.8283,
-  lng: -98.5795,
-};
+type FlightState = [
+  string,                 // 0: icao24
+  string | null,          // 1: callsign
+  string,                 // 2: origin_country
+  number | null,          // 3: time_position
+  number,                 // 4: last_contact
+  number | null,          // 5: longitude
+  number | null,          // 6: latitude
+  number | null,          // 7: baro_altitude
+  boolean,                // 8: on_ground
+  number | null,          // 9: velocity
+  number | null,          // 10: true_track
+  number | null,          // 11: vertical_rate
+  number[] | null,        // 12: sensors
+  number | null,          // 13: geo_altitude
+  string | null,          // 14: squawk
+  boolean,                // 15: spi
+  number                  // 16: position_source
+];
 
 type FlightData = {
   icao24: string;
@@ -37,7 +52,7 @@ export default function AirCargoPage() {
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
   });
 
-  const searchFlight = async (): Promise<void> => {
+  const searchFlight = useCallback(async (): Promise<void> => {
     if (!flightNum.trim()) return;
 
     setLoading(true);
@@ -50,7 +65,10 @@ export default function AirCargoPage() {
 
       if (!res.ok) throw new Error(data.error || 'Unknown error');
 
-      const firstMatch = (data.flights ?? []).find((f: any[]) => f[1]?.toUpperCase().includes(flightNum.trim().toUpperCase()));
+      const firstMatch = (data.flights ?? []).find(
+        (f: FlightState) => f[1]?.toUpperCase().includes(flightNum.trim().toUpperCase())
+      );
+
       if (!firstMatch) throw new Error('No matching flights found.');
 
       setFlight({
@@ -73,14 +91,14 @@ export default function AirCargoPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [flightNum]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       if (flightNum.trim()) searchFlight();
     }, 30000);
     return () => clearInterval(interval);
-  }, [flightNum]);
+  }, [flightNum, searchFlight]);
 
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg">
