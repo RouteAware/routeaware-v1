@@ -11,14 +11,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing flight number' }, { status: 400 });
   }
 
-  // Always pad to 8 characters
-  const callsign = rawFlight.trim().toUpperCase().padEnd(8, ' ');
-  console.log('🔎 Searching for:', JSON.stringify(callsign));
+  const callsign = rawFlight.trim().toUpperCase();
 
   const clientId = process.env.OPENSKY_CLIENT_ID!;
   const clientSecret = process.env.OPENSKY_CLIENT_SECRET!;
 
   try {
+    // Step 1: Get access token
     const tokenRes = await fetch('https://opensky-network.org/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -36,30 +35,27 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
     }
 
-    const now = Math.floor(Date.now() / 1000);
-    const past = now - 6 * 60 * 60;
+    // Step 2: Search state vectors for callsign
+    const res = await fetch('https://opensky-network.org/api/states/all', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
-    const flightsRes = await fetch(
-      `https://opensky-network.org/api/flights/callsign?callsign=${encodeURIComponent(callsign)}&begin=${past}&end=${now}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
-
-    const raw = await flightsRes.text();
-
-    if (!flightsRes.ok) {
-      console.error('🛑 OpenSky error response:', raw);
-      return NextResponse.json({ error: raw }, { status: flightsRes.status });
+    if (!res.ok) {
+      return NextResponse.json({ error: 'Failed to fetch aircraft states' }, { status: 500 });
     }
 
-    const flightData = JSON.parse(raw);
-    return NextResponse.json({ flights: flightData });
+    const { states } = await res.json();
 
+    // Filter matching flights by callsign (partial match allowed)
+    const matched = (states || []).filter(
+      (s: any[]) => s[1] && s[1].toUpperCase().includes(callsign)
+    );
+
+    return NextResponse.json({ flights: matched });
   } catch (err) {
-    console.error('Flight API error:', err);
-    return NextResponse.json({ error: 'Internal error while fetching flight data' }, { status: 500 });
+    console.error('Flight fetch error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
