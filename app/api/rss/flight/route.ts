@@ -11,15 +11,14 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing flight number' }, { status: 400 });
   }
 
-  // Normalize input: uppercase and pad to 8 characters
+  // Always pad to 8 characters
   const callsign = rawFlight.trim().toUpperCase().padEnd(8, ' ');
-  console.log('🔍 Querying OpenSky for callsign:', JSON.stringify(callsign));
+  console.log('🔎 Searching for:', JSON.stringify(callsign));
 
   const clientId = process.env.OPENSKY_CLIENT_ID!;
   const clientSecret = process.env.OPENSKY_CLIENT_SECRET!;
 
   try {
-    // STEP 1: Get access token
     const tokenRes = await fetch('https://opensky-network.org/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -37,7 +36,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
     }
 
-    // STEP 2: Fetch flight history
     const now = Math.floor(Date.now() / 1000);
     const past = now - 6 * 60 * 60;
 
@@ -50,13 +48,14 @@ export async function GET(req: NextRequest) {
       }
     );
 
+    const raw = await flightsRes.text();
+
     if (!flightsRes.ok) {
-      const msg = await flightsRes.text();
-      console.error('🚨 OpenSky error response:', msg);
-      return NextResponse.json({ error: msg }, { status: flightsRes.status });
+      console.error('🛑 OpenSky error response:', raw);
+      return NextResponse.json({ error: raw }, { status: flightsRes.status });
     }
 
-    const flightData = await flightsRes.json();
+    const flightData = JSON.parse(raw);
     return NextResponse.json({ flights: flightData });
 
   } catch (err) {
