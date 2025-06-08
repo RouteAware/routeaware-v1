@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { GoogleMap, Marker, InfoWindow, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, Marker, InfoWindow } from '@react-google-maps/api';
+import { MapProvider } from '../components/MapProvider';
 
 const containerStyle = {
   width: '100%',
@@ -47,10 +48,6 @@ export default function AirCargoPage() {
   const [flight, setFlight] = useState<FlightData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
-
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY!,
-  });
 
   const searchFlight = useCallback(async (): Promise<void> => {
     if (!flightNum.trim()) return;
@@ -101,73 +98,75 @@ export default function AirCargoPage() {
   }, [flightNum, searchFlight]);
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-lg">
-      <h1 className="text-2xl font-bold text-blue-700 mb-4">✈️ Air Cargo Tracker</h1>
+    <MapProvider>
+      <div className="bg-white p-6 rounded-2xl shadow-lg">
+        <h1 className="text-2xl font-bold text-blue-700 mb-4">✈️ Air Cargo Tracker</h1>
 
-      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
-        <input
-          value={flightNum}
-          onChange={(e) => setFlightNum(e.target.value)}
-          placeholder="Enter flight number (e.g. AAL123)"
-          className="border border-gray-300 rounded-lg px-4 py-2 w-full sm:w-64"
-        />
-        <button
-          onClick={searchFlight}
-          disabled={loading}
-          className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition disabled:opacity-50"
-        >
-          {loading ? 'Searching…' : 'Track Flight'}
-        </button>
-      </div>
-
-      {error && <p className="text-red-600 mb-4">{error}</p>}
-
-      {isLoaded && flight && flight.latitude && flight.longitude ? (
-        <div className="space-y-4">
-          <GoogleMap
-            mapContainerStyle={containerStyle}
-            center={{ lat: flight.latitude, lng: flight.longitude }}
-            zoom={6}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+          <input
+            value={flightNum}
+            onChange={(e) => setFlightNum(e.target.value)}
+            placeholder="Enter flight number (e.g. AAL123)"
+            className="border border-gray-300 rounded-lg px-4 py-2 w-full sm:w-64"
+          />
+          <button
+            onClick={searchFlight}
+            disabled={loading}
+            className="bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-800 transition disabled:opacity-50"
           >
-            <Marker position={{ lat: flight.latitude, lng: flight.longitude }}>
-              <InfoWindow position={{ lat: flight.latitude, lng: flight.longitude }}>
-                <div className="text-sm">
-                  <p><strong>{flight.callsign ?? 'Unknown Flight'}</strong></p>
-                  <p>From: {flight.origin_country}</p>
-                  {flight.velocity && <p>Speed: {Math.round(flight.velocity)} m/s</p>}
-                  {flight.true_track && <p>Heading: {Math.round(flight.true_track)}°</p>}
-                </div>
-              </InfoWindow>
-            </Marker>
-          </GoogleMap>
-
-          <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
-            <h2 className="font-semibold text-blue-800 mb-1">
-              {flight.callsign ?? 'Unknown Flight'}
-            </h2>
-            <p className="text-sm text-gray-600">
-              From: <strong>{flight.origin_country}</strong>
-            </p>
-            <p className="text-sm text-gray-600">
-              Last Seen:{' '}
-              {flight.last_contact
-                ? new Date(flight.last_contact * 1000).toLocaleString()
-                : 'N/A'}
-            </p>
-            <p className="text-sm text-gray-600">
-              Altitude: {flight.baro_altitude ? `${Math.round(flight.baro_altitude)} m` : 'N/A'}
-            </p>
-            <p className="text-sm text-gray-600">
-              Velocity: {flight.velocity ? `${Math.round(flight.velocity)} m/s` : 'N/A'}
-            </p>
-            <p className="text-sm text-gray-600">
-              On Ground: {flight.on_ground ? 'Yes' : 'No'}
-            </p>
-          </div>
+            {loading ? 'Searching…' : 'Track Flight'}
+          </button>
         </div>
-      ) : (
-        !loading && !error && <p className="text-gray-500">No recent flight data found.</p>
-      )}
-    </div>
+
+        {error && <p className="text-red-600 mb-4">{error}</p>}
+
+        {flight && flight.latitude && flight.longitude ? (
+          <div className="space-y-4">
+            <GoogleMap
+              mapContainerStyle={containerStyle}
+              center={{ lat: flight.latitude, lng: flight.longitude }}
+              zoom={6}
+            >
+              <Marker position={{ lat: flight.latitude, lng: flight.longitude }}>
+                <InfoWindow position={{ lat: flight.latitude, lng: flight.longitude }}>
+                  <div className="text-sm">
+                    <p><strong>{flight.callsign ?? 'Unknown Flight'}</strong></p>
+                    <p>From: {flight.origin_country}</p>
+                    {flight.velocity && <p>Speed: {Math.round(flight.velocity)} m/s</p>}
+                    {flight.true_track && <p>Heading: {Math.round(flight.true_track)}°</p>}
+                  </div>
+                </InfoWindow>
+              </Marker>
+            </GoogleMap>
+
+            <div className="border border-gray-200 p-4 rounded-xl bg-gray-50">
+              <h2 className="font-semibold text-blue-800 mb-1">
+                {flight.callsign ?? 'Unknown Flight'}
+              </h2>
+              <p className="text-sm text-gray-600">
+                From: <strong>{flight.origin_country}</strong>
+              </p>
+              <p className="text-sm text-gray-600">
+                Last Seen:{' '}
+                {flight.last_contact
+                  ? new Date(flight.last_contact * 1000).toLocaleString()
+                  : 'N/A'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Altitude: {flight.baro_altitude ? `${Math.round(flight.baro_altitude)} m` : 'N/A'}
+              </p>
+              <p className="text-sm text-gray-600">
+                Velocity: {flight.velocity ? `${Math.round(flight.velocity)} m/s` : 'N/A'}
+              </p>
+              <p className="text-sm text-gray-600">
+                On Ground: {flight.on_ground ? 'Yes' : 'No'}
+              </p>
+            </div>
+          </div>
+        ) : (
+          !loading && !error && <p className="text-gray-500">No recent flight data found.</p>
+        )}
+      </div>
+    </MapProvider>
   );
 }
