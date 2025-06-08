@@ -1,4 +1,4 @@
-// 3/5: Updated Map.tsx with fixed tile height
+// Map.tsx - Fixed optional chaining and TS errors
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -8,28 +8,26 @@ import {
   DirectionsRenderer,
   TrafficLayer,
 } from '@react-google-maps/api';
-
 import { fetchBoundingBoxAlerts, RouteWeatherAdvisory } from '../utils/fetchBoundingBoxAlerts';
 
 interface MapProps {
   origin: string;
   destination: string;
   departureTime?: Date;
-  showTraffic?: boolean;
-  showWeather?: boolean;
-  weatherLayer?: string;
-  weatherOpacity?: number;
+  showTraffic: boolean;
+  showWeather: boolean;
+  weatherLayer: string;
+  weatherOpacity: number;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
-  onAlertsUpdate?: (alerts: RouteWeatherAdvisory[]) => void;
+  onAlertsUpdate: (alerts: RouteWeatherAdvisory[]) => void;
 }
 
-// container fills parent wrapper
+// Fills parent tile height
 const containerStyle = {
   width: '100%',
   height: '100%',
 };
-
-const center = { lat: 39.5, lng: -98.35 };
+const defaultCenter = { lat: 39.5, lng: -98.35 };
 
 const Map: React.FC<MapProps> = ({
   origin,
@@ -37,8 +35,8 @@ const Map: React.FC<MapProps> = ({
   departureTime,
   showTraffic,
   showWeather,
-  weatherLayer = 'precipitation_new',
-  weatherOpacity = 0.5,
+  weatherLayer,
+  weatherOpacity,
   onSummaryUpdate,
   onAlertsUpdate,
 }) => {
@@ -51,11 +49,11 @@ const Map: React.FC<MapProps> = ({
     libraries: ['places'],
   });
 
+  // Fetch directions when inputs change
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
-
-    const directionsService = new google.maps.DirectionsService();
-    directionsService.route(
+    const service = new google.maps.DirectionsService();
+    service.route(
       {
         origin,
         destination,
@@ -65,40 +63,39 @@ const Map: React.FC<MapProps> = ({
           trafficModel: google.maps.TrafficModel.BEST_GUESS,
         },
         provideRouteAlternatives: false,
-      },
-      async (result, status) => {
-        if (status === google.maps.DirectionsStatus.OK && result) {
+      }, async (result, status) => {
+        if (status === 'OK' && result) {
           setDirections(result);
-
           const leg = result.routes[0].legs[0];
           const distanceText = leg.distance?.text || '';
           const durationText = leg.duration?.text || '';
           const trafficText = leg.duration_in_traffic?.text || '';
           onSummaryUpdate(distanceText, durationText, trafficText);
 
+          // Fit bounds to route
           const bounds = new google.maps.LatLngBounds();
-          result.routes[0].overview_path.forEach((coord) => bounds.extend(coord));
+          result.routes[0].overview_path.forEach(pt => bounds.extend(pt));
+          mapRef.current?.fitBounds(bounds);
+
+          // Fetch weather alerts
           const ne = bounds.getNorthEast();
           const sw = bounds.getSouthWest();
-          if (onAlertsUpdate) {
-            const alerts = await fetchBoundingBoxAlerts(
-              sw.lat(), sw.lng(), ne.lat(), ne.lng()
-            );
-            onAlertsUpdate(alerts);
-          }
+          const alerts = await fetchBoundingBoxAlerts(sw.lat(), sw.lng(), ne.lat(), ne.lng());
+          onAlertsUpdate(alerts);
         } else {
           setDirections(null);
           onSummaryUpdate('', '', '');
-          if (onAlertsUpdate) onAlertsUpdate([]);
+          onAlertsUpdate([]);
         }
       }
     );
   }, [isLoaded, origin, destination, departureTime, onSummaryUpdate, onAlertsUpdate]);
 
-  const handleLoad = (map: google.maps.Map) => {
+  const handleMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
   };
 
+  // Weather overlay toggle
   useEffect(() => {
     if (!mapRef.current) return;
     if (weatherOverlayRef.current) {
@@ -106,40 +103,29 @@ const Map: React.FC<MapProps> = ({
       weatherOverlayRef.current = null;
     }
     if (showWeather) {
-      const weatherTileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
-      const weatherOverlay = new google.maps.ImageMapType({
+      const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
+      const overlay = new google.maps.ImageMapType({
         getTileUrl: (coord, zoom) =>
-          weatherTileUrl
-            .replace('{x}', coord.x.toString())
-            .replace('{y}', coord.y.toString())
-            .replace('{z}', zoom.toString()),
+          tileUrl.replace('{x}', coord.x + '').replace('{y}', coord.y + '').replace('{z}', zoom + ''),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',
       });
-      mapRef.current.overlayMapTypes.insertAt(0, weatherOverlay);
-      weatherOverlayRef.current = weatherOverlay;
+      mapRef.current.overlayMapTypes.insertAt(0, overlay);
+      weatherOverlayRef.current = overlay;
     }
   }, [showWeather, weatherLayer, weatherOpacity]);
 
-  if (loadError) {
-    return <div className="bg-red-100 text-red-800 p-4 rounded">Error loading map</div>;
-  }
-  if (!isLoaded) {
-    return (
-      <div className="bg-gray-200 w-full h-[500px] flex items-center justify-center rounded-xl">
-        Loading map…
-      </div>
-    );
-  }
+  if (loadError) return <div className="text-red-600 p-4">Error loading Google Maps</div>;
+  if (!isLoaded) return <div className="w-full h-[500px] bg-gray-200 flex items-center justify-center rounded-xl">Loading map…</div>;
 
   return (
     <div className="relative w-full h-[500px] bg-gray-200 rounded-xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={containerStyle}
-        center={center}
+        center={defaultCenter}
         zoom={4}
-        onLoad={handleLoad}
+        onLoad={handleMapLoad}
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
         {showTraffic && <TrafficLayer />}
