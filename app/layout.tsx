@@ -2,7 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
-import Header from './components/Header';
+// import Header from './components/Header'; // removed because ClientWrapper handles it
 import Footer from './components/Footer';
 import { ClientWrapper } from './components/ClientWrapper';
 import { ReactNode } from 'react';
