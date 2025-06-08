@@ -13,7 +13,6 @@ import {
   FaUser,
   FaInfoCircle,
   FaTachometerAlt,
-  FaTruckLoading,
 } from 'react-icons/fa';
 
 export default function DashboardPage() {
