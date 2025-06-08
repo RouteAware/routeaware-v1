@@ -5,11 +5,14 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const flight = searchParams.get('flight'); // e.g. "AAL123"
+  const rawFlight = searchParams.get('flight'); // e.g. "AAL123"
 
-  if (!flight) {
+  if (!rawFlight) {
     return NextResponse.json({ error: 'Missing flight number' }, { status: 400 });
   }
+
+  // Format the callsign: uppercase and pad to 8 characters with spaces
+  const callsign = rawFlight.toUpperCase().padEnd(8, ' ');
 
   const clientId = process.env.OPENSKY_CLIENT_ID!;
   const clientSecret = process.env.OPENSKY_CLIENT_SECRET!;
@@ -33,18 +36,19 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
     }
 
-    // STEP 2: Use access token to fetch flights matching the callsign
+    // STEP 2: Use access token to fetch flights matching the formatted callsign
     const now = Math.floor(Date.now() / 1000);
     const past = now - 6 * 60 * 60; // look back 6 hours
 
-    const flightsRes = await fetch(
-      `https://opensky-network.org/api/flights/callsign?callsign=${encodeURIComponent(flight)}&begin=${past}&end=${now}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const url = `https://opensky-network.org/api/flights/callsign?callsign=${encodeURIComponent(
+      callsign
+    )}&begin=${past}&end=${now}`;
+
+    const flightsRes = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
 
     if (!flightsRes.ok) {
       throw new Error(`Flight data fetch failed with status ${flightsRes.status}`);
