@@ -5,20 +5,21 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const rawFlight = searchParams.get('flight'); // e.g. "AAL123"
+  const rawFlight = searchParams.get('flight');
 
   if (!rawFlight) {
     return NextResponse.json({ error: 'Missing flight number' }, { status: 400 });
   }
 
-  // Format the callsign: uppercase and pad to 8 characters with spaces
-  const callsign = rawFlight.toUpperCase().padEnd(8, ' ');
+  // Normalize input: uppercase and pad to 8 characters
+  const callsign = rawFlight.trim().toUpperCase().padEnd(8, ' ');
+  console.log('🔍 Querying OpenSky for callsign:', JSON.stringify(callsign));
 
   const clientId = process.env.OPENSKY_CLIENT_ID!;
   const clientSecret = process.env.OPENSKY_CLIENT_SECRET!;
 
   try {
-    // STEP 1: Get access token from OpenSky
+    // STEP 1: Get access token
     const tokenRes = await fetch('https://opensky-network.org/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -36,22 +37,23 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
     }
 
-    // STEP 2: Use access token to fetch flights matching the formatted callsign
+    // STEP 2: Fetch flight history
     const now = Math.floor(Date.now() / 1000);
-    const past = now - 6 * 60 * 60; // look back 6 hours
+    const past = now - 6 * 60 * 60;
 
-    const url = `https://opensky-network.org/api/flights/callsign?callsign=${encodeURIComponent(
-      callsign
-    )}&begin=${past}&end=${now}`;
-
-    const flightsRes = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
+    const flightsRes = await fetch(
+      `https://opensky-network.org/api/flights/callsign?callsign=${encodeURIComponent(callsign)}&begin=${past}&end=${now}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     if (!flightsRes.ok) {
-      throw new Error(`Flight data fetch failed with status ${flightsRes.status}`);
+      const msg = await flightsRes.text();
+      console.error('🚨 OpenSky error response:', msg);
+      return NextResponse.json({ error: msg }, { status: flightsRes.status });
     }
 
     const flightData = await flightsRes.json();
