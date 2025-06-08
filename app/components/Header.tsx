@@ -11,10 +11,10 @@ const navItems = [
   { label: 'Over the Road', href: '/' },
   { label: 'Air Cargo', href: '/air-cargo' },
   { label: 'Drayage', href: '/drayage' },
-  { label: 'News', href: '/news' },                // ✅ Inserted here
-  { label: 'Profile', href: '/profile' },
-  { label: 'About', href: '/about-us' },
   { label: 'Advisories', href: '/all-active-advisories' },
+  { label: 'News', href: '/news' },                // ✅ Inserted here 
+  { label: 'About', href: '/about-us' },
+  { label: 'Profile', href: '/profile' },
   { label: 'Settings', href: '/settings' },
 ];
 
