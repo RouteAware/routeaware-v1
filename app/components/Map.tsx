@@ -1,4 +1,4 @@
-// Map.tsx - Fixed suppressMarkers prop and enabled user interaction
+// Map.tsx - Add route advisories support
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -10,6 +10,7 @@ import {
   Marker,
 } from '@react-google-maps/api';
 import { fetchBoundingBoxAlerts, RouteWeatherAdvisory } from '../utils/fetchBoundingBoxAlerts';
+import { fetchRouteAdvisories } from '../utils/fetchRouteAdvisories';
 
 interface MapProps {
   origin: string;
@@ -21,6 +22,7 @@ interface MapProps {
   weatherOpacity: number;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
   onAlertsUpdate: (alerts: RouteWeatherAdvisory[]) => void;
+  onAdvisoriesUpdate: (advisories: string[]) => void;  // new prop
 }
 
 const containerStyle = { width: '100%', height: '100%' };
@@ -36,6 +38,7 @@ const Map: React.FC<MapProps> = ({
   weatherOpacity,
   onSummaryUpdate,
   onAlertsUpdate,
+  onAdvisoriesUpdate,
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [originPos, setOriginPos] = useState<google.maps.LatLngLiteral | null>(null);
@@ -50,43 +53,72 @@ const Map: React.FC<MapProps> = ({
 
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
+
     const service = new google.maps.DirectionsService();
     service.route(
       {
         origin,
         destination,
         travelMode: google.maps.TravelMode.DRIVING,
-        drivingOptions: { departureTime: departureTime || new Date(), trafficModel: google.maps.TrafficModel.BEST_GUESS },
+        drivingOptions: {
+          departureTime: departureTime || new Date(),
+          trafficModel: google.maps.TrafficModel.BEST_GUESS,
+        },
         provideRouteAlternatives: false,
-      }, async (result, status) => {
+      },
+      async (result, status) => {
         if (status === 'OK' && result) {
           setDirections(result);
           const leg = result.routes[0].legs[0];
+
           setOriginPos({ lat: leg.start_location.lat(), lng: leg.start_location.lng() });
           setDestPos({ lat: leg.end_location.lat(), lng: leg.end_location.lng() });
-          onSummaryUpdate(leg.distance?.text || '', leg.duration?.text || '', leg.duration_in_traffic?.text || '');
 
+          onSummaryUpdate(
+            leg.distance?.text || '',
+            leg.duration?.text || '',
+            leg.duration_in_traffic?.text || ''
+          );
+
+          // Fit to route
           const bounds = new google.maps.LatLngBounds();
           result.routes[0].overview_path.forEach(pt => bounds.extend(pt));
           mapRef.current?.fitBounds(bounds);
 
+          // Weather alerts
           const ne = bounds.getNorthEast();
           const sw = bounds.getSouthWest();
           const alerts = await fetchBoundingBoxAlerts(sw.lat(), sw.lng(), ne.lat(), ne.lng());
           onAlertsUpdate(alerts);
+
+          // Route advisories
+          const advisories = await fetchRouteAdvisories(sw.lat(), sw.lng(), ne.lat(), ne.lng());
+          onAdvisoriesUpdate(advisories);
         } else {
           setDirections(null);
           setOriginPos(null);
           setDestPos(null);
           onSummaryUpdate('', '', '');
           onAlertsUpdate([]);
+          onAdvisoriesUpdate([]);
         }
       }
     );
-  }, [isLoaded, origin, destination, departureTime, onSummaryUpdate, onAlertsUpdate]);
+  }, [
+    isLoaded,
+    origin,
+    destination,
+    departureTime,
+    onSummaryUpdate,
+    onAlertsUpdate,
+    onAdvisoriesUpdate,
+  ]);
 
-  const handleMapLoad = (map: google.maps.Map) => { mapRef.current = map; };
+  const handleMapLoad = (map: google.maps.Map) => {
+    mapRef.current = map;
+  };
 
+  // Weather overlay
   useEffect(() => {
     if (!mapRef.current) return;
     if (weatherOverlayRef.current) {
@@ -96,7 +128,8 @@ const Map: React.FC<MapProps> = ({
     if (showWeather) {
       const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
       const overlay = new google.maps.ImageMapType({
-        getTileUrl: (coord, zoom) => tileUrl.replace('{x}', `${coord.x}`).replace('{y}', `${coord.y}`).replace('{z}', `${zoom}`),
+        getTileUrl: (coord, zoom) =>
+          tileUrl.replace('{x}', `${coord.x}`).replace('{y}', `${coord.y}`).replace('{z}', `${zoom}`),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',
@@ -107,7 +140,12 @@ const Map: React.FC<MapProps> = ({
   }, [showWeather, weatherLayer, weatherOpacity]);
 
   if (loadError) return <div className="text-red-600 p-4">Error loading Google Maps</div>;
-  if (!isLoaded) return <div className="w-full h-[500px] bg-gray-200 flex items-center justify-center rounded-xl">Loading map…</div>;
+  if (!isLoaded)
+    return (
+      <div className="w-full h-[500px] bg-gray-200 flex items-center justify-center rounded-xl">
+        Loading map…
+      </div>
+    );
 
   return (
     <div className="relative w-full h-[500px] bg-gray-200 rounded-xl overflow-hidden">
@@ -119,9 +157,7 @@ const Map: React.FC<MapProps> = ({
         options={{ disableDefaultUI: false, zoomControl: true, draggable: true, scrollwheel: true, gestureHandling: 'greedy' }}
       >
         {showTraffic && <TrafficLayer />}
-        {directions && (
-          <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />
-        )}
+        {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />}
         {originPos && <Marker position={originPos} />}
         {destPos && <Marker position={destPos} />}
       </GoogleMap>
