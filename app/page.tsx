@@ -15,23 +15,36 @@ export default function Home() {
   const [trafficDelay, setTrafficDelay] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showTraffic, setShowTraffic] = useState(true);
+
+  // Phase 1
+  const [showTraffic, setShowTraffic] = useState(false); // Step 1/5: default off
   const [showWeather, setShowWeather] = useState(false);
   const [weatherLayer, setWeatherLayer] = useState('precipitation_new');
   const [weatherOpacity, setWeatherOpacity] = useState(0.5);
-  const [pickupTime, setPickupTime] = useState('');
+
+  // Phase 1 inputs
   const [pickupDate, setPickupDate] = useState('');
+  const [pickupTime, setPickupTime] = useState('');
+  const departureTime = pickupDate && pickupTime ? new Date(`${pickupDate}T${pickupTime}`) : undefined;
+
+  // Phase 2
+  const [deliveryDate, setDeliveryDate] = useState(''); // Step 2/5
   const [dailyMiles, setDailyMiles] = useState('');
+
+  // Phase 1.5
+  const [use24Hour, setUse24Hour] = useState(false); // Step 4/5
+
+  // Summary & alerts
   const [estimatedArrival, setEstimatedArrival] = useState('');
   const [weatherAlerts, setWeatherAlerts] = useState<RouteWeatherAdvisory[]>([]);
 
-  const handleRouteSummary = (distance: string, duration: string, traffic?: string) => {
-    setDistance(distance);
-    setDuration(duration);
+  const handleRouteSummary = (dist: string, dur: string, traffic?: string) => {
+    setDistance(dist);
+    setDuration(dur);
     setTrafficDelay(traffic || '');
     setError('');
 
-    const eta = calculateETA(distance, pickupDate, pickupTime, dailyMiles);
+    const eta = calculateETA(dist, pickupDate, pickupTime, dailyMiles, use24Hour);
     setEstimatedArrival(eta);
   };
 
@@ -41,12 +54,15 @@ export default function Home() {
     setDistance('');
     setDuration('');
     setTrafficDelay('');
-    setPickupTime('');
     setPickupDate('');
+    setPickupTime('');
+    setDeliveryDate('');
     setDailyMiles('');
+    setUse24Hour(false);
     setEstimatedArrival('');
     setWeatherAlerts([]);
     setError('');
+    setLoading(false);
   };
 
   return (
@@ -56,7 +72,6 @@ export default function Home() {
           {/* Map Tile */}
           <div className="bg-white shadow-lg rounded-2xl p-4">
             <h2 className="text-xl font-semibold mb-2">Map</h2>
-
             {/* Layer Toggles */}
             <div className="flex flex-wrap gap-4 mb-3">
               <label className="flex items-center space-x-2">
@@ -67,6 +82,7 @@ export default function Home() {
                 />
                 <span>Show Traffic</span>
               </label>
+
               <label className="flex items-center space-x-2">
                 <input
                   type="checkbox"
@@ -75,6 +91,7 @@ export default function Home() {
                 />
                 <span>Show Weather</span>
               </label>
+
               {showWeather && (
                 <div className="flex flex-wrap gap-2">
                   <select
@@ -98,57 +115,97 @@ export default function Home() {
                   </select>
                 </div>
               )}
+
+              {/* 24-hour toggle */}
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={use24Hour}
+                  onChange={() => setUse24Hour(!use24Hour)}
+                />
+                <span>Use 24-hour format</span>
+              </label>
             </div>
 
             <Map
               origin={origin}
               destination={destination}
-              onSummaryUpdate={handleRouteSummary}
-              onAlertsUpdate={(alerts) => setWeatherAlerts(alerts)}
+              departureTime={departureTime}
               showTraffic={showTraffic}
               showWeather={showWeather}
               weatherLayer={weatherLayer}
               weatherOpacity={weatherOpacity}
+              onSummaryUpdate={handleRouteSummary}
+              onAlertsUpdate={(alerts) => setWeatherAlerts(alerts)}
             />
           </div>
 
           {/* Input Tile */}
           <div className="bg-white shadow-lg rounded-2xl p-4">
             <h2 className="text-xl font-semibold mb-2">Route Input</h2>
+            <label htmlFor="origin" className="block mb-1 font-medium">
+              Origin Address:
+            </label>
             <input
+              id="origin"
               type="text"
-              placeholder="Origin Address"
+              placeholder="123 Main St, City, State"
               value={origin}
               onChange={(e) => setOrigin(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
+            <label htmlFor="destination" className="block mb-1 font-medium">
+              Destination Address:
+            </label>
             <input
+              id="destination"
               type="text"
-              placeholder="Destination Address"
+              placeholder="456 Elm St, City, State"
               value={destination}
               onChange={(e) => setDestination(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
+            <label htmlFor="pickupDate" className="block mb-1 font-medium">
+              Pickup Date:
+            </label>
             <input
+              id="pickupDate"
               type="date"
               value={pickupDate}
               onChange={(e) => setPickupDate(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
+            <label htmlFor="pickupTime" className="block mb-1 font-medium">
+              Pickup Time:
+            </label>
             <input
+              id="pickupTime"
               type="time"
               value={pickupTime}
               onChange={(e) => setPickupTime(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
+            <label htmlFor="deliveryDate" className="block mb-1 font-medium">
+              Delivery Date (optional):
+            </label>
             <input
+              id="deliveryDate"
+              type="date"
+              value={deliveryDate}
+              onChange={(e) => setDeliveryDate(e.target.value)}
+              className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
+            />
+            <label htmlFor="dailyMiles" className="block mb-1 font-medium">
+              Daily Mileage (miles):
+            </label>
+            <input
+              id="dailyMiles"
               type="number"
-              placeholder="Daily Mileage (e.g., 600)"
+              placeholder="e.g., 600"
               value={dailyMiles}
               onChange={(e) => setDailyMiles(e.target.value)}
               className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
             />
-
             <button
               onClick={() => {
                 if (!origin || !destination) {
@@ -169,7 +226,6 @@ export default function Home() {
             >
               {loading ? 'Checking Route…' : 'Check Route'}
             </button>
-
             <button
               onClick={handleReset}
               className="w-full bg-gray-300 text-gray-800 py-2 rounded-lg hover:bg-gray-400 transition"
@@ -182,33 +238,22 @@ export default function Home() {
         {/* Route Summary */}
         <div className="bg-white shadow-lg rounded-2xl p-4 mt-6">
           <h2 className="text-xl font-semibold mb-2">Route Summary</h2>
-
-          {error && (
-            <div className="bg-red-100 text-red-800 p-3 rounded mb-2">{error}</div>
-          )}
-
+          {error && <div className="bg-red-100 text-red-800 p-3 rounded mb-2">{error}</div>}
           {distance && duration && (
             <div className="space-y-1">
               <p><strong>Distance:</strong> {distance}</p>
               <p><strong>Estimated Time:</strong> {duration}</p>
               {trafficDelay && <p><strong>Time with Traffic:</strong> {trafficDelay}</p>}
               {estimatedArrival && <p><strong>Estimated Arrival:</strong> {estimatedArrival}</p>}
-
+              {deliveryDate && <p><strong>Delivery Date:</strong> {deliveryDate}</p>}
               {weatherAlerts.length > 0 && (
                 <div className="mt-4">
                   <h3 className="text-lg font-semibold">Weather Alerts:</h3>
                   <ul className="list-disc list-inside text-sm text-red-700 space-y-1">
-                    {weatherAlerts.map((alert, index) => (
-                      <li key={index}>
+                    {weatherAlerts.map((alert, idx) => (
+                      <li key={idx}>
                         <strong>{alert.event}</strong>{' '}
-                        <a
-                          href={alert.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="underline text-blue-600"
-                        >
-                          Details
-                        </a>
+                        <a href={alert.link} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">Details</a>
                       </li>
                     ))}
                   </ul>
@@ -216,7 +261,7 @@ export default function Home() {
               )}
             </div>
           )}
-                </div>
+        </div>
       </main>
     </>
   );

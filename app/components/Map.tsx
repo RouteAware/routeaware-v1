@@ -1,3 +1,4 @@
+// 3/5: Updated Map.tsx with fixed tile height
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -13,24 +14,27 @@ import { fetchBoundingBoxAlerts, RouteWeatherAdvisory } from '../utils/fetchBoun
 interface MapProps {
   origin: string;
   destination: string;
+  departureTime?: Date;
   showTraffic?: boolean;
   showWeather?: boolean;
   weatherLayer?: string;
   weatherOpacity?: number;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
-  onAlertsUpdate?: (alerts: RouteWeatherAdvisory[]) => void; // New callback
+  onAlertsUpdate?: (alerts: RouteWeatherAdvisory[]) => void;
 }
 
+// container fills parent wrapper
 const containerStyle = {
   width: '100%',
-  height: '300px',
+  height: '100%',
 };
 
-const center = { lat: 39.5, lng: -98.35 }; // Center of USA
+const center = { lat: 39.5, lng: -98.35 };
 
 const Map: React.FC<MapProps> = ({
   origin,
   destination,
+  departureTime,
   showTraffic,
   showWeather,
   weatherLayer = 'precipitation_new',
@@ -47,19 +51,17 @@ const Map: React.FC<MapProps> = ({
     libraries: ['places'],
   });
 
-  // Load directions
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
 
     const directionsService = new google.maps.DirectionsService();
-
     directionsService.route(
       {
         origin,
         destination,
         travelMode: google.maps.TravelMode.DRIVING,
         drivingOptions: {
-          departureTime: new Date(),
+          departureTime: departureTime || new Date(),
           trafficModel: google.maps.TrafficModel.BEST_GUESS,
         },
         provideRouteAlternatives: false,
@@ -72,16 +74,12 @@ const Map: React.FC<MapProps> = ({
           const distanceText = leg.distance?.text || '';
           const durationText = leg.duration?.text || '';
           const trafficText = leg.duration_in_traffic?.text || '';
-
           onSummaryUpdate(distanceText, durationText, trafficText);
 
-          // Bounding box logic
           const bounds = new google.maps.LatLngBounds();
           result.routes[0].overview_path.forEach((coord) => bounds.extend(coord));
-
           const ne = bounds.getNorthEast();
           const sw = bounds.getSouthWest();
-
           if (onAlertsUpdate) {
             const alerts = await fetchBoundingBoxAlerts(
               sw.lat(), sw.lng(), ne.lat(), ne.lng()
@@ -91,40 +89,34 @@ const Map: React.FC<MapProps> = ({
         } else {
           setDirections(null);
           onSummaryUpdate('', '', '');
-          if (onAlertsUpdate) onAlertsUpdate([]); // Clear alerts on error
+          if (onAlertsUpdate) onAlertsUpdate([]);
         }
       }
     );
-  }, [isLoaded, origin, destination, onSummaryUpdate, onAlertsUpdate]);
+  }, [isLoaded, origin, destination, departureTime, onSummaryUpdate, onAlertsUpdate]);
 
-  // Handle map load
   const handleLoad = (map: google.maps.Map) => {
     mapRef.current = map;
   };
 
-  // Weather overlay effect
   useEffect(() => {
     if (!mapRef.current) return;
-
-    // Remove previous overlay
     if (weatherOverlayRef.current) {
       mapRef.current.overlayMapTypes.clear();
       weatherOverlayRef.current = null;
     }
-
     if (showWeather) {
-      const weatherTileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=184c3501ef5981b79c0c15c52146fef2`;
-
+      const weatherTileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
       const weatherOverlay = new google.maps.ImageMapType({
-        getTileUrl: (coord, zoom) => weatherTileUrl
-          .replace('{x}', coord.x.toString())
-          .replace('{y}', coord.y.toString())
-          .replace('{z}', zoom.toString()),
+        getTileUrl: (coord, zoom) =>
+          weatherTileUrl
+            .replace('{x}', coord.x.toString())
+            .replace('{y}', coord.y.toString())
+            .replace('{z}', zoom.toString()),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',
       });
-
       mapRef.current.overlayMapTypes.insertAt(0, weatherOverlay);
       weatherOverlayRef.current = weatherOverlay;
     }
@@ -133,17 +125,16 @@ const Map: React.FC<MapProps> = ({
   if (loadError) {
     return <div className="bg-red-100 text-red-800 p-4 rounded">Error loading map</div>;
   }
-
   if (!isLoaded) {
     return (
-      <div className="bg-gray-200 h-[300px] flex items-center justify-center rounded-xl">
+      <div className="bg-gray-200 w-full h-[500px] flex items-center justify-center rounded-xl">
         Loading map…
       </div>
     );
   }
 
   return (
-    <div className="relative w-full h-[300px] bg-gray-200 rounded-xl overflow-hidden">
+    <div className="relative w-full h-[500px] bg-gray-200 rounded-xl overflow-hidden">
       <GoogleMap
         mapContainerStyle={containerStyle}
         center={center}
