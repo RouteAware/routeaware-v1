@@ -4,24 +4,23 @@ import { NextRequest, NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 type FlightState = [
-  icao24: string,
-  callsign: string | null,
-  origin_country: string,
-  time_position: number | null,
-  last_contact: number,
-  longitude: number | null,
-  latitude: number | null,
-  baro_altitude: number | null,
-  on_ground: boolean,
-  velocity: number | null,
-  true_track: number | null,
-  vertical_rate: number | null,
-  sensors: number[] | null,
-  geo_altitude: number | null,
-  squawk: string | null,
-  spi: boolean,
-  position_source: number,
-  category?: number
+  string, // icao24
+  string | null, // callsign
+  string, // origin_country
+  number | null, // time_position
+  number, // last_contact
+  number | null, // longitude
+  number | null, // latitude
+  number | null, // baro_altitude
+  boolean, // on_ground
+  number | null, // velocity
+  number | null, // true_track
+  number | null, // vertical_rate
+  number[] | null, // sensors
+  number | null, // geo_altitude
+  string | null, // squawk
+  boolean, // spi
+  number // position_source
 ];
 
 export async function GET(req: NextRequest) {
@@ -32,13 +31,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Missing flight number' }, { status: 400 });
   }
 
-  const callsign = rawFlight.trim().toUpperCase();
+  const callsign = rawFlight.trim().toUpperCase(); // No regex validation — allow partial or full match
 
   const clientId = process.env.OPENSKY_CLIENT_ID!;
   const clientSecret = process.env.OPENSKY_CLIENT_SECRET!;
 
   try {
-    // Step 1: Get access token
     const tokenRes = await fetch('https://opensky-network.org/oauth2/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -56,7 +54,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 500 });
     }
 
-    // Step 2: Fetch all state vectors
     const res = await fetch('https://opensky-network.org/api/states/all', {
       headers: {
         Authorization: `Bearer ${accessToken}`,
@@ -69,7 +66,6 @@ export async function GET(req: NextRequest) {
 
     const { states }: { states: FlightState[] } = await res.json();
 
-    // Filter matching flights by callsign
     const matched = (states || []).filter(
       (s) => s[1] && s[1].toUpperCase().includes(callsign)
     );
