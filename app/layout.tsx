@@ -1,8 +1,11 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
+import Script from 'next/script';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import { ClientWrapper } from './components/ClientWrapper';
+import { ReactNode } from 'react';
 
 const geistSans = Geist({
   variable: '--font-geist-sans',
@@ -16,8 +19,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'RouteAware',
-  description:
-    'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
+  description: 'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
   metadataBase: new URL('https://berouteaware.com'),
   icons: {
     icon: '/favicon.ico',
@@ -30,8 +32,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'RouteAware',
-    description:
-      'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
+    description: 'Plan smarter routes with real-time weather, traffic, air cargo, and drayage tracking.',
     url: 'https://berouteaware.com',
     siteName: 'RouteAware',
     images: [
@@ -47,24 +48,23 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'RouteAware',
-    description:
-      'Plan smarter routes with live weather, traffic alerts, and tracking tools.',
+    description: 'Plan smarter routes with live weather, traffic alerts, and tracking tools.',
     images: ['https://berouteaware.com/og-image.png'],
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        <Script
+          async
+          src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Header />
-        <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
-          {children}
-        </main>
+        <ClientWrapper>{children}</ClientWrapper>
         <Footer />
       </body>
     </html>

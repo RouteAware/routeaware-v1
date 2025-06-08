@@ -1,59 +1,110 @@
 'use client';
 
 import React from 'react';
-import { FaMapMarkedAlt, FaBell, FaExclamationTriangle, FaRoad } from 'react-icons/fa';
+import Link from 'next/link';
+import Image from 'next/image';
+import {
+  FaMapMarkedAlt,
+  FaBell,
+  FaExclamationTriangle,
+  FaRoad,
+  FaPlaneDeparture,
+  FaShip,
+  FaNewspaper,
+  FaCog,
+} from 'react-icons/fa';
 
 export default function DashboardPage() {
+  const cards = [
+    {
+      href: '/air-cargo',
+      icon: <FaPlaneDeparture className="text-blue-600 text-xl" />,
+      title: 'Air Cargo Tracker',
+      description: 'Track flights and cargo status',
+    },
+    {
+      href: '/drayage',
+      icon: <FaShip className="text-blue-700 text-xl" />,
+      title: 'Drayage Lookup',
+      description: 'Track vessel and port data',
+    },
+    {
+      href: '/',
+      icon: <FaRoad className="text-green-600 text-xl" />,
+      title: 'Over the Road',
+      description: 'Plan optimized truck routes',
+    },
+    {
+      href: '/all-active-advisories',
+      icon: <FaExclamationTriangle className="text-yellow-600 text-xl" />,
+      title: 'Active Advisories',
+      description: 'Live NWS alerts by state',
+    },
+    {
+      href: '/news',
+      icon: <FaNewspaper className="text-indigo-500 text-xl" />,
+      title: 'News',
+      description: 'Industry & weather headlines',
+    },
+    {
+      href: '/settings',
+      icon: <FaCog className="text-gray-700 text-xl" />,
+      title: 'Settings',
+      description: 'Customize your RouteAware experience',
+    },
+  ];
+
   return (
     <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Logo */}
+        <div className="flex justify-center py-4">
+          <Image src="/logo.png" alt="RouteAware Logo" width={200} height={200} priority />
+        </div>
+
         {/* Header */}
         <div className="bg-white shadow-lg rounded-2xl p-6">
           <h1 className="text-3xl font-bold text-blue-700 mb-2">RouteAware Dashboard</h1>
-          <p className="text-gray-600">At-a-glance insights for your routes, alerts, and tools.</p>
-          <div className="mt-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded">
-            🚧 This dashboard is under construction — full feature release coming soon.
-          </div>
+          <p className="text-gray-600">At-a-glance access to your tracking and planning tools.</p>
         </div>
 
-        {/* Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl shadow p-4 flex items-center space-x-4">
-            <FaMapMarkedAlt className="text-blue-500 text-xl" />
-            <div>
-              <h2 className="font-semibold text-sm">Saved Routes</h2>
-              <p className="text-gray-500 text-xs">0 routes saved</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 flex items-center space-x-4">
-            <FaBell className="text-red-500 text-xl" />
-            <div>
-              <h2 className="font-semibold text-sm">Weather Alerts</h2>
-              <p className="text-gray-500 text-xs">Live NWS sync</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 flex items-center space-x-4">
-            <FaExclamationTriangle className="text-yellow-600 text-xl" />
-            <div>
-              <h2 className="font-semibold text-sm">Active Advisories</h2>
-              <p className="text-gray-500 text-xs">0 current advisories</p>
-            </div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 flex items-center space-x-4">
-            <FaRoad className="text-green-600 text-xl" />
-            <div>
-              <h2 className="font-semibold text-sm">Traffic Snapshot</h2>
-              <p className="text-gray-500 text-xs">Check cam status</p>
-            </div>
-          </div>
+        {/* Navigation Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {cards.map(({ href, icon, title, description }) => (
+            <Link
+              key={href}
+              href={href}
+              className="bg-white rounded-xl shadow hover:shadow-md p-4 flex items-start space-x-4 transition"
+            >
+              {icon}
+              <div>
+                <h2 className="font-semibold text-sm">{title}</h2>
+                <p className="text-gray-500 text-xs">{description}</p>
+              </div>
+            </Link>
+          ))}
         </div>
 
-        {/* Placeholder for route planning */}
-        <div className="bg-white rounded-2xl shadow p-6">
-          <h2 className="text-xl font-semibold text-blue-700 mb-2">Quick Plan</h2>
-          <p className="text-sm text-gray-600 mb-4">Instantly generate a new route from here. Coming soon!</p>
-          <div className="bg-gray-100 border border-dashed border-gray-300 rounded-lg p-8 text-center text-gray-400">
-            Route Planning Widget Placeholder
+        {/* Extras */}
+        <div className="space-y-4">
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded text-blue-900">
+            🌤️ Current national average: <strong>72°F</strong> with <strong>light wind</strong> reported in most regions.
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="text-sm font-semibold mb-1 text-gray-700">🧠 Did You Know?</h3>
+            <p className="text-xs text-gray-500">
+              RouteAware pulls alerts straight from the National Weather Service, so you’ll never miss a major weather risk.
+            </p>
+          </div>
+
+          <div className="bg-white shadow rounded p-4">
+            <h3 className="text-sm font-semibold mb-2 text-gray-700">🧭 Recent Routes</h3>
+            <ul className="text-xs text-gray-600 space-y-1">
+              <li>• Atlanta → Chicago (3 days ago)</li>
+              <li>• Dallas → Phoenix (5 days ago)</li>
+              <li>• Miami → Charlotte (last week)</li>
+            </ul>
           </div>
         </div>
       </div>
