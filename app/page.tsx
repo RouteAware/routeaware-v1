@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { calculateETA } from './utils/calculateETA';
 import { RouteWeatherAdvisory } from './utils/fetchBoundingBoxAlerts';
-import { fetchRouteAdvisories } from './utils/fetchRouteAdvisories';
+
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
