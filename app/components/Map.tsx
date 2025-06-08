@@ -1,4 +1,4 @@
-// Map.tsx - Enhanced weather overlay and stable markers
+// Map.tsx - Fixed suppressMarkers prop and enabled user interaction
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -23,11 +23,7 @@ interface MapProps {
   onAlertsUpdate: (alerts: RouteWeatherAdvisory[]) => void;
 }
 
-// Fills parent tile height
-const containerStyle = {
-  width: '100%',
-  height: '100%',
-};
+const containerStyle = { width: '100%', height: '100%' };
 const defaultCenter = { lat: 39.5, lng: -98.35 };
 
 const Map: React.FC<MapProps> = ({
@@ -42,8 +38,8 @@ const Map: React.FC<MapProps> = ({
   onAlertsUpdate,
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
-  const [originLatLng, setOriginLatLng] = useState<google.maps.LatLngLiteral | null>(null);
-  const [destLatLng, setDestLatLng] = useState<google.maps.LatLngLiteral | null>(null);
+  const [originPos, setOriginPos] = useState<google.maps.LatLngLiteral | null>(null);
+  const [destPos, setDestPos] = useState<google.maps.LatLngLiteral | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const weatherOverlayRef = useRef<google.maps.ImageMapType | null>(null);
 
@@ -52,7 +48,6 @@ const Map: React.FC<MapProps> = ({
     libraries: ['places'],
   });
 
-  // Fetch directions when inputs change
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
     const service = new google.maps.DirectionsService();
@@ -61,45 +56,28 @@ const Map: React.FC<MapProps> = ({
         origin,
         destination,
         travelMode: google.maps.TravelMode.DRIVING,
-        drivingOptions: {
-          departureTime: departureTime || new Date(),
-          trafficModel: google.maps.TrafficModel.BEST_GUESS,
-        },
+        drivingOptions: { departureTime: departureTime || new Date(), trafficModel: google.maps.TrafficModel.BEST_GUESS },
         provideRouteAlternatives: false,
       }, async (result, status) => {
         if (status === 'OK' && result) {
           setDirections(result);
           const leg = result.routes[0].legs[0];
+          setOriginPos({ lat: leg.start_location.lat(), lng: leg.start_location.lng() });
+          setDestPos({ lat: leg.end_location.lat(), lng: leg.end_location.lng() });
+          onSummaryUpdate(leg.distance?.text || '', leg.duration?.text || '', leg.duration_in_traffic?.text || '');
 
-          // Update markers once per successful route
-          setOriginLatLng({
-            lat: leg.start_location.lat(),
-            lng: leg.start_location.lng(),
-          });
-          setDestLatLng({
-            lat: leg.end_location.lat(),
-            lng: leg.end_location.lng(),
-          });
-
-          const distanceText = leg.distance?.text || '';
-          const durationText = leg.duration?.text || '';
-          const trafficText = leg.duration_in_traffic?.text || '';
-          onSummaryUpdate(distanceText, durationText, trafficText);
-
-          // Fit bounds to route
           const bounds = new google.maps.LatLngBounds();
           result.routes[0].overview_path.forEach(pt => bounds.extend(pt));
           mapRef.current?.fitBounds(bounds);
 
-          // Fetch weather alerts
           const ne = bounds.getNorthEast();
           const sw = bounds.getSouthWest();
           const alerts = await fetchBoundingBoxAlerts(sw.lat(), sw.lng(), ne.lat(), ne.lng());
           onAlertsUpdate(alerts);
         } else {
           setDirections(null);
-          setOriginLatLng(null);
-          setDestLatLng(null);
+          setOriginPos(null);
+          setDestPos(null);
           onSummaryUpdate('', '', '');
           onAlertsUpdate([]);
         }
@@ -107,31 +85,23 @@ const Map: React.FC<MapProps> = ({
     );
   }, [isLoaded, origin, destination, departureTime, onSummaryUpdate, onAlertsUpdate]);
 
-  const handleMapLoad = (map: google.maps.Map) => {
-    mapRef.current = map;
-  };
+  const handleMapLoad = (map: google.maps.Map) => { mapRef.current = map; };
 
-  // Weather overlay toggle: only clear/add on toggle changes
   useEffect(() => {
     if (!mapRef.current) return;
-    // Clear existing
     if (weatherOverlayRef.current) {
       mapRef.current.overlayMapTypes.clear();
       weatherOverlayRef.current = null;
     }
-    // Add new when toggled on
     if (showWeather) {
       const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
       const overlay = new google.maps.ImageMapType({
-        getTileUrl: (coord, zoom) => tileUrl
-          .replace('{x}', coord.x + '')
-          .replace('{y}', coord.y + '')
-          .replace('{z}', zoom + ''),
+        getTileUrl: (coord, zoom) => tileUrl.replace('{x}', `${coord.x}`).replace('{y}', `${coord.y}`).replace('{z}', `${zoom}`),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',
       });
-      mapRef.current.overlayMapTypes.push(overlay);
+      mapRef.current.overlayMapTypes.insertAt(0, overlay);
       weatherOverlayRef.current = overlay;
     }
   }, [showWeather, weatherLayer, weatherOpacity]);
@@ -146,17 +116,14 @@ const Map: React.FC<MapProps> = ({
         center={defaultCenter}
         zoom={4}
         onLoad={handleMapLoad}
-        options={{ disableDefaultUI: true, zoomControl: true }}
+        options={{ disableDefaultUI: false, zoomControl: true, draggable: true, scrollwheel: true, gestureHandling: 'greedy' }}
       >
         {showTraffic && <TrafficLayer />}
         {directions && (
-          <DirectionsRenderer
-            directions={directions}
-            options={{ suppressMarkers: true }} // hide default markers
-          />
+          <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />
         )}
-        {originLatLng && <Marker position={originLatLng} />}
-        {destLatLng && <Marker position={destLatLng} />}
+        {originPos && <Marker position={originPos} />}
+        {destPos && <Marker position={destPos} />}
       </GoogleMap>
     </div>
   );
