@@ -1,4 +1,4 @@
-// Map.tsx - Fixed optional chaining and TS errors
+// Map.tsx - Enhanced weather overlay and stable markers
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -7,6 +7,7 @@ import {
   useJsApiLoader,
   DirectionsRenderer,
   TrafficLayer,
+  Marker,
 } from '@react-google-maps/api';
 import { fetchBoundingBoxAlerts, RouteWeatherAdvisory } from '../utils/fetchBoundingBoxAlerts';
 
@@ -41,6 +42,8 @@ const Map: React.FC<MapProps> = ({
   onAlertsUpdate,
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
+  const [originLatLng, setOriginLatLng] = useState<google.maps.LatLngLiteral | null>(null);
+  const [destLatLng, setDestLatLng] = useState<google.maps.LatLngLiteral | null>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const weatherOverlayRef = useRef<google.maps.ImageMapType | null>(null);
 
@@ -67,6 +70,17 @@ const Map: React.FC<MapProps> = ({
         if (status === 'OK' && result) {
           setDirections(result);
           const leg = result.routes[0].legs[0];
+
+          // Update markers once per successful route
+          setOriginLatLng({
+            lat: leg.start_location.lat(),
+            lng: leg.start_location.lng(),
+          });
+          setDestLatLng({
+            lat: leg.end_location.lat(),
+            lng: leg.end_location.lng(),
+          });
+
           const distanceText = leg.distance?.text || '';
           const durationText = leg.duration?.text || '';
           const trafficText = leg.duration_in_traffic?.text || '';
@@ -84,6 +98,8 @@ const Map: React.FC<MapProps> = ({
           onAlertsUpdate(alerts);
         } else {
           setDirections(null);
+          setOriginLatLng(null);
+          setDestLatLng(null);
           onSummaryUpdate('', '', '');
           onAlertsUpdate([]);
         }
@@ -95,23 +111,27 @@ const Map: React.FC<MapProps> = ({
     mapRef.current = map;
   };
 
-  // Weather overlay toggle
+  // Weather overlay toggle: only clear/add on toggle changes
   useEffect(() => {
     if (!mapRef.current) return;
+    // Clear existing
     if (weatherOverlayRef.current) {
       mapRef.current.overlayMapTypes.clear();
       weatherOverlayRef.current = null;
     }
+    // Add new when toggled on
     if (showWeather) {
       const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
       const overlay = new google.maps.ImageMapType({
-        getTileUrl: (coord, zoom) =>
-          tileUrl.replace('{x}', coord.x + '').replace('{y}', coord.y + '').replace('{z}', zoom + ''),
+        getTileUrl: (coord, zoom) => tileUrl
+          .replace('{x}', coord.x + '')
+          .replace('{y}', coord.y + '')
+          .replace('{z}', zoom + ''),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',
       });
-      mapRef.current.overlayMapTypes.insertAt(0, overlay);
+      mapRef.current.overlayMapTypes.push(overlay);
       weatherOverlayRef.current = overlay;
     }
   }, [showWeather, weatherLayer, weatherOpacity]);
@@ -129,7 +149,14 @@ const Map: React.FC<MapProps> = ({
         options={{ disableDefaultUI: true, zoomControl: true }}
       >
         {showTraffic && <TrafficLayer />}
-        {directions && <DirectionsRenderer directions={directions} />}
+        {directions && (
+          <DirectionsRenderer
+            directions={directions}
+            options={{ suppressMarkers: true }} // hide default markers
+          />
+        )}
+        {originLatLng && <Marker position={originLatLng} />}
+        {destLatLng && <Marker position={destLatLng} />}
       </GoogleMap>
     </div>
   );
