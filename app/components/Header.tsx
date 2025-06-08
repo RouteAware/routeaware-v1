@@ -26,11 +26,12 @@ export default function Header() {
       <div className="max-w-screen-xl mx-auto px-4 py-4 flex justify-between items-center">
         <Link href="/" className="flex items-center">
           <Image
-            src="/logo.png"
-            alt="RouteAware Logo"
-            width={200} // ⬅️ 3x size
-            height={200}
-          />
+  src="/logo.png"
+  alt="RouteAware Logo"
+  width={300}
+  height={300}
+  className="h-20 w-auto object-contain"
+/>
         </Link>
         <nav className="flex space-x-6">
           {navItems.map(({ label, href }) => (
