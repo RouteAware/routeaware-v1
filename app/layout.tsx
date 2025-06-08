@@ -1,9 +1,8 @@
 import './globals.css';
-import { Analytics } from "@vercel/analytics/next"
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import Script from 'next/script';
-// import Header from './components/Header'; // removed because ClientWrapper handles it
 import Footer from './components/Footer';
 import { ClientWrapper } from './components/ClientWrapper';
 import { ReactNode } from 'react';
@@ -67,6 +66,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ClientWrapper>{children}</ClientWrapper>
         <Footer />
+        <Analytics /> {/* ✅ Analytics now in use */}
       </body>
     </html>
   );
