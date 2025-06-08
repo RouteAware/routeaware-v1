@@ -1,9 +1,8 @@
-// app/utils/fetchRouteAdvisories.ts
+// File: app/utils/fetchRouteAdvisories.ts
 
 /**
- * Fetches any active advisories within a bounding box.
- * You’ll pass sw and ne corners from your map bounds.
- * Returns an array of advisory descriptions.
+ * Utility to fetch route advisories from our Next API.
+ * Calls GET /api/advisories/route?sw=...&ne=...
  */
 export async function fetchRouteAdvisories(
   swLat: number,
@@ -11,12 +10,11 @@ export async function fetchRouteAdvisories(
   neLat: number,
   neLng: number
 ): Promise<string[]> {
-  const url = `/api/advisories?sw=${swLat},${swLng}&ne=${neLat},${neLng}`;
+  const url = `/api/advisories/route?sw=${swLat},${swLng}&ne=${neLat},${neLng}`;
   const res = await fetch(url);
   if (!res.ok) {
-    console.error('Failed to fetch route advisories', await res.text());
+    console.error('Failed to fetch route advisories', res.statusText);
     return [];
   }
-  // Expecting JSON array of strings:
   return (await res.json()) as string[];
 }

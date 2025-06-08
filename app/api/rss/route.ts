@@ -1,10 +1,12 @@
+// File: app/api/rss/route.ts
+
 import Parser from 'rss-parser';
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 
 const parser = new Parser();
 
-export async function GET(req: NextRequest) {
-  const { searchParams } = new URL(req.url);
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
   const url = searchParams.get('url');
 
   if (!url) {
