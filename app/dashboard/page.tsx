@@ -55,9 +55,16 @@ export default function DashboardPage() {
   return (
     <main className="min-h-screen bg-gray-100 text-gray-900 p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Logo */}
-        <div className="flex justify-center py-4">
-          <Image src="/logo.png" alt="RouteAware Logo" width={200} height={200} priority />
+        {/* Logo with tighter spacing */}
+        <div className="flex justify-center pt-2 pb-4">
+          <Image
+            src="/logo.png"
+            alt="RouteAware Logo"
+            width={400}
+            height={400}
+            priority
+            className="object-contain h-24 w-auto"
+          />
         </div>
 
         {/* Header */}
@@ -90,18 +97,46 @@ export default function DashboardPage() {
           </div>
 
           <div className="bg-white shadow rounded p-4">
-            <h3 className="text-sm font-semibold mb-1 text-gray-700">🧠 Did You Know?</h3>
+            <h3 className="text-sm font-semibold mb-1 text-gray-700">💡 Did You Know?</h3>
             <p className="text-xs text-gray-500">
               RouteAware pulls alerts straight from the National Weather Service, so you’ll never miss a major weather risk.
             </p>
           </div>
 
+          {/* 📰 News Headlines replacing "Recent Routes" */}
           <div className="bg-white shadow rounded p-4">
-            <h3 className="text-sm font-semibold mb-2 text-gray-700">🧭 Recent Routes</h3>
-            <ul className="text-xs text-gray-600 space-y-1">
-              <li>• Atlanta → Chicago (3 days ago)</li>
-              <li>• Dallas → Phoenix (5 days ago)</li>
-              <li>• Miami → Charlotte (last week)</li>
+            <h3 className="text-sm font-semibold mb-2 text-gray-700">📰 Recent News</h3>
+            <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+              <li>
+                <a
+                  href="https://www.freightwaves.com/news/port-activity-surges-in-june"
+                  className="text-blue-600 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Port activity surges in June amid demand spike
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.truckinginfo.com/news/traffic-safety-tech-mandates"
+                  className="text-blue-600 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Safety tech mandates proposed for long-haul fleets
+                </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.weather.com/news/tornado-outbreak-forecast"
+                  className="text-blue-600 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Tornado threat expands into Midwest corridor this week
+                </a>
+              </li>
             </ul>
           </div>
         </div>
