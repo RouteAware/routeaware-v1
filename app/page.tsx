@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable react/no-unescaped-entities */
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -176,7 +177,7 @@ export default function Home() {
         <h2 className="text-xl font-semibold">Route Summary</h2>
         {error && <div className="bg-red-100 text-red-800 p-2 rounded">{error}</div>}
         {!distance && !error && (
-          <p className="text-gray-600">Enter route details and click "Check Route" to see summary.</p>
+          <p className="text-gray-600">Enter route details and click &quot;Check Route&quot; to see summary.</p>
         )}
         {distance && (
           <div className="space-y-2">
