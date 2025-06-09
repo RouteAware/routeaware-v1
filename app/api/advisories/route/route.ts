@@ -22,8 +22,9 @@ export async function GET(request: Request) {
     }
     const data = await res.json();
     const advisories = (data.features || [])
-      .map((f: any) => f.properties.headline || f.properties.event)
-      .filter(Boolean);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  .map((f: any) => f.properties.headline || f.properties.event)
+  .filter(Boolean);
     return NextResponse.json(advisories);
   } catch (err) {
     console.error('Error fetching NWS alerts', err);
