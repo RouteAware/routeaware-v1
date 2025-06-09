@@ -34,28 +34,39 @@ export default function ForecastMap() {
     setTileTimestamp(newTimestamp);
   }, [hourOffset]);
 
-  const getOverlayMapType = () => {
-    return new window.google.maps.ImageMapType({
-      getTileUrl: function (coord, zoom) {
-        return `https://tile.openweathermap.org/map/precipitation_new/${zoom}/${coord.x}/${coord.y}.png?appid=${OPENWEATHER_KEY}&tm=${tileTimestamp}`;
-      },
-      tileSize: new window.google.maps.Size(256, 256),
-      name: "Precipitation Forecast",
-      opacity: 0.6,
-    });
-  };
-
   const onLoad = (map: google.maps.Map) => {
+    const getOverlayMapType = () => {
+      return new window.google.maps.ImageMapType({
+        getTileUrl: function (coord, zoom) {
+          return `https://tile.openweathermap.org/map/precipitation_new/${zoom}/${coord.x}/${coord.y}.png?appid=${OPENWEATHER_KEY}&tm=${tileTimestamp}`;
+        },
+        tileSize: new window.google.maps.Size(256, 256),
+        name: "Precipitation Forecast",
+        opacity: 0.6,
+      });
+    };
+
     map.overlayMapTypes.clear();
     map.overlayMapTypes.insertAt(0, getOverlayMapType());
   };
 
   useEffect(() => {
     if (!isLoaded) return;
-    const map = document.querySelector(".forecast-map") as HTMLElement;
-    if (!map) return;
-    const gMap = (map as any).__gm?.map;
+    const mapEl = document.querySelector(".forecast-map") as HTMLElement;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const gMap = (mapEl as any).__gm?.map;
     if (gMap) {
+      const getOverlayMapType = () => {
+        return new window.google.maps.ImageMapType({
+          getTileUrl: function (coord, zoom) {
+            return `https://tile.openweathermap.org/map/precipitation_new/${zoom}/${coord.x}/${coord.y}.png?appid=${OPENWEATHER_KEY}&tm=${tileTimestamp}`;
+          },
+          tileSize: new window.google.maps.Size(256, 256),
+          name: "Precipitation Forecast",
+          opacity: 0.6,
+        });
+      };
+
       gMap.overlayMapTypes.clear();
       gMap.overlayMapTypes.insertAt(0, getOverlayMapType());
     }
