@@ -1,4 +1,4 @@
-// Map.tsx - Add route advisories support
+// Map.tsx - Add onCoordinatesUpdate callback for current weather
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
@@ -22,7 +22,8 @@ interface MapProps {
   weatherOpacity: number;
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
   onAlertsUpdate: (alerts: RouteWeatherAdvisory[]) => void;
-  onAdvisoriesUpdate: (advisories: string[]) => void;  // new prop
+  onAdvisoriesUpdate: (advisories: string[]) => void;
+  onCoordinatesUpdate?: (origin: google.maps.LatLngLiteral, destination: google.maps.LatLngLiteral) => void; // new
 }
 
 const containerStyle = { width: '100%', height: '100%' };
@@ -39,6 +40,7 @@ const Map: React.FC<MapProps> = ({
   onSummaryUpdate,
   onAlertsUpdate,
   onAdvisoriesUpdate,
+  onCoordinatesUpdate, // new
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [originPos, setOriginPos] = useState<google.maps.LatLngLiteral | null>(null);
@@ -71,8 +73,15 @@ const Map: React.FC<MapProps> = ({
           setDirections(result);
           const leg = result.routes[0].legs[0];
 
-          setOriginPos({ lat: leg.start_location.lat(), lng: leg.start_location.lng() });
-          setDestPos({ lat: leg.end_location.lat(), lng: leg.end_location.lng() });
+          const oPos = { lat: leg.start_location.lat(), lng: leg.start_location.lng() };
+          const dPos = { lat: leg.end_location.lat(), lng: leg.end_location.lng() };
+          setOriginPos(oPos);
+          setDestPos(dPos);
+
+          // Emit coordinates for weather lookup
+          if (onCoordinatesUpdate) {
+            onCoordinatesUpdate(oPos, dPos);
+          }
 
           onSummaryUpdate(
             leg.distance?.text || '',
@@ -82,7 +91,7 @@ const Map: React.FC<MapProps> = ({
 
           // Fit to route
           const bounds = new google.maps.LatLngBounds();
-          result.routes[0].overview_path.forEach(pt => bounds.extend(pt));
+          result.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
           mapRef.current?.fitBounds(bounds);
 
           // Weather alerts
@@ -112,6 +121,7 @@ const Map: React.FC<MapProps> = ({
     onSummaryUpdate,
     onAlertsUpdate,
     onAdvisoriesUpdate,
+    onCoordinatesUpdate, // new
   ]);
 
   const handleMapLoad = (map: google.maps.Map) => {
@@ -126,10 +136,14 @@ const Map: React.FC<MapProps> = ({
       weatherOverlayRef.current = null;
     }
     if (showWeather) {
-      const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
+      const tileUrl =
+        `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
       const overlay = new google.maps.ImageMapType({
         getTileUrl: (coord, zoom) =>
-          tileUrl.replace('{x}', `${coord.x}`).replace('{y}', `${coord.y}`).replace('{z}', `${zoom}`),
+          tileUrl
+            .replace('{x}', `${coord.x}`)
+            .replace('{y}', `${coord.y}`)
+            .replace('{z}', `${zoom}`),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',

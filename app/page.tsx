@@ -4,12 +4,12 @@ import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
 import { calculateETA } from './utils/calculateETA';
 import { RouteWeatherAdvisory } from './utils/fetchBoundingBoxAlerts';
-
+import { fetchCurrentWeather, CurrentWeather } from './utils/fetchCurrentWeather';
 
 const Map = dynamic(() => import('./components/Map'), { ssr: false });
 
 export default function Home() {
-  // Route state
+  // Route input state
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
 
@@ -19,7 +19,7 @@ export default function Home() {
   const [weatherLayer, setWeatherLayer] = useState('precipitation_new');
   const [weatherOpacity, setWeatherOpacity] = useState(0.5);
 
-  // Inputs
+  // Trip details
   const [pickupDate, setPickupDate] = useState('');
   const [pickupTime, setPickupTime] = useState('');
   const [deliveryDate, setDeliveryDate] = useState('');
@@ -36,6 +36,10 @@ export default function Home() {
   const [routeAdvisories, setRouteAdvisories] = useState<string[]>([]);
   const [error, setError] = useState('');
 
+  // Current weather at endpoints
+  const [originWeather, setOriginWeather] = useState<CurrentWeather | null>(null);
+  const [destinationWeather, setDestinationWeather] = useState<CurrentWeather | null>(null);
+
   // Called by Map when route data arrives
   const handleRouteSummary = (dist: string, dur: string, traffic?: string) => {
     setDistance(dist);
@@ -46,37 +50,50 @@ export default function Home() {
     setEstimatedArrival(eta);
   };
 
-  // Trigger route check
+  // Update weather when Map provides endpoint coordinates
+  const handleCoordinatesUpdate = async (
+    originPos: { lat: number; lng: number },
+    destPos: { lat: number; lng: number }
+  ) => {
+    try {
+      const [oW, dW] = await Promise.all([
+        fetchCurrentWeather(originPos.lat, originPos.lng),
+        fetchCurrentWeather(destPos.lat, destPos.lng),
+      ]);
+      setOriginWeather(oW);
+      setDestinationWeather(dW);
+    } catch (err) {
+      console.error('Error fetching current weather:', err);
+    }
+  };
+
+  // Trigger route calculation
   const handleCheckRoute = () => {
     if (!origin || !destination) {
       setError('Please enter both origin and destination.');
       return;
     }
-    // Reset previous results
-    setDistance('');
-    setDuration('');
-    setTrafficDelay('');
-    setEstimatedArrival('');
-    setWeatherAlerts([]);
-    setRouteAdvisories([]);
+    setDistance(''); setDuration(''); setTrafficDelay('');
+    setEstimatedArrival(''); setWeatherAlerts([]); setRouteAdvisories([]);
+    setOriginWeather(null); setDestinationWeather(null);
     setError('');
-    // Map component will react to origin/destination change
+    // Map will react to origin/destination change
   };
 
   return (
     <main className="min-h-screen bg-gray-100 p-6">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Map Panel */}
-        <div className="bg-white shadow-lg rounded-2xl p-4">
-          <h2 className="text-xl font-semibold mb-2">Map</h2>
+        <section className="bg-white shadow rounded-2xl p-4">
+          <h2 className="text-xl font-semibold mb-3">Map</h2>
           <div className="flex flex-wrap gap-4 mb-3">
             <label className="flex items-center space-x-2">
               <input type="checkbox" checked={showTraffic} onChange={() => setShowTraffic(!showTraffic)} />
-              <span>Show Traffic</span>
+              <span>Traffic</span>
             </label>
             <label className="flex items-center space-x-2">
               <input type="checkbox" checked={showWeather} onChange={() => setShowWeather(!showWeather)} />
-              <span>Show Weather</span>
+              <span>Weather</span>
             </label>
             {showWeather && (
               <>
@@ -95,7 +112,7 @@ export default function Home() {
             )}
             <label className="flex items-center space-x-2">
               <input type="checkbox" checked={use24Hour} onChange={() => setUse24Hour(!use24Hour)} />
-              <span>Use 24-hour format</span>
+              <span>24-Hour</span>
             </label>
           </div>
           <Map
@@ -109,106 +126,129 @@ export default function Home() {
             onSummaryUpdate={handleRouteSummary}
             onAlertsUpdate={alerts => setWeatherAlerts(alerts)}
             onAdvisoriesUpdate={adv => setRouteAdvisories(adv)}
+            onCoordinatesUpdate={handleCoordinatesUpdate}
           />
-        </div>
+        </section>
         {/* Input Panel */}
-        <div className="bg-white shadow-lg rounded-2xl p-4">
-          <h2 className="text-xl font-semibold mb-2">Route Input</h2>
-          <label className="block mb-1 font-medium">Origin Address</label>
-          <input
-            type="text"
-            value={origin}
-            onChange={e => setOrigin(e.target.value)}
-            placeholder="123 Main St, City"
-            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <label className="block mb-1 font-medium">Destination Address</label>
-          <input
-            type="text"
-            value={destination}
-            onChange={e => setDestination(e.target.value)}
-            placeholder="456 Elm St, City"
-            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <label className="block mb-1 font-medium">Pickup Date</label>
-          <input
-            type="date"
-            value={pickupDate}
-            onChange={e => setPickupDate(e.target.value)}
-            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <label className="block mb-1 font-medium">Pickup Time</label>
-          <input
-            type="time"
-            value={pickupTime}
-            onChange={e => setPickupTime(e.target.value)}
-            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <label className="block mb-1 font-medium">Delivery Date (optional)</label>
-          <input
-            type="date"
-            value={deliveryDate}
-            onChange={e => setDeliveryDate(e.target.value)}
-            className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <label className="block mb-1 font-medium">Daily Mileage (miles)</label>
-          <input
-            type="number"
-            value={dailyMiles}
-            onChange={e => setDailyMiles(e.target.value)}
-            placeholder="e.g., 600"
-            className="w-full mb-4 px-3 py-2 border border-gray-300 rounded-lg"
-          />
-          <button
-            onClick={handleCheckRoute}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
-          >
-            Check Route
-          </button>
-        </div>
+        <section className="bg-white shadow rounded-2xl p-4">
+          <h2 className="text-xl font-semibold mb-3">Route Input</h2>
+          <div className="space-y-3">
+            <div>
+              <label className="block font-medium">Origin</label>
+              <input
+                type="text" value={origin} onChange={e => setOrigin(e.target.value)}
+                placeholder="123 Main St, City" className="w-full px-3 py-2 border rounded" />
+            </div>
+            <div>
+              <label className="block font-medium">Destination</label>
+              <input
+                type="text" value={destination} onChange={e => setDestination(e.target.value)}
+                placeholder="456 Elm St, City" className="w-full px-3 py-2 border rounded" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium">Pickup Date</label>
+                <input type="date" value={pickupDate} onChange={e => setPickupDate(e.target.value)} className="w-full px-3 py-2 border rounded" />
+              </div>
+              <div>
+                <label className="block font-medium">Pickup Time</label>
+                <input type="time" value={pickupTime} onChange={e => setPickupTime(e.target.value)} className="w-full px-3 py-2 border rounded" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-medium">Delivery Date</label>
+                <input type="date" value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="w-full px-3 py-2 border rounded" />
+              </div>
+              <div>
+                <label className="block font-medium">Daily Miles</label>
+                <input type="number" value={dailyMiles} onChange={e => setDailyMiles(e.target.value)} placeholder="600" className="w-full px-3 py-2 border rounded" />
+              </div>
+            </div>
+            <button onClick={handleCheckRoute} className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
+              Check Route
+            </button>
+          </div>
+        </section>
       </div>
       {/* Summary Panel */}
-      <div className="bg-white shadow-lg rounded-2xl p-4 mt-6">
-        <h2 className="text-xl font-semibold mb-2">Route Summary</h2>
-        {error && <div className="bg-red-100 text-red-800 p-3 rounded mb-2">{error}</div>}
-        {distance && duration && (
+      <section className="bg-white shadow rounded-2xl p-4 mt-6 space-y-4">
+        <h2 className="text-xl font-semibold">Route Summary</h2>
+        {error && <div className="bg-red-100 text-red-800 p-2 rounded">{error}</div>}
+        {!distance && !error && (
+          <p className="text-gray-600">Enter route details and click "Check Route" to see summary.</p>
+        )}
+        {distance && (
           <div className="space-y-2">
-            <p><strong>Distance:</strong> {distance}</p>
-            <p><strong>Estimated Time:</strong> {duration}</p>
-            {trafficDelay && <p><strong>Time with Traffic:</strong> {trafficDelay}</p>}
-            {estimatedArrival && <p><strong>Estimated Arrival:</strong> {estimatedArrival}</p>}
-            {deliveryDate && <p><strong>Delivery Date:</strong> {deliveryDate}</p>}
-            {weatherAlerts.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-lg font-semibold">Weather Alerts:</h3>
-                <ul className="list-disc list-inside text-sm text-red-700">
-                  {weatherAlerts.map((a, i) => (
-                    <li key={i}>
-                      <strong>{a.event}</strong>{' '}
-                      <a href={a.link} target="_blank" rel="noopener noreferrer" className="underline text-blue-600">Details</a>
-                    </li>
-                  ))}
-                </ul>
+                <p className="text-sm text-gray-500">Origin</p>
+                <p>{origin}</p>
+                {originWeather && <p className="text-sm text-blue-600">{originWeather.temp}°F, {originWeather.description}</p>}
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Destination</p>
+                <p>{destination}</p>
+                {destinationWeather && <p className="text-sm text-blue-600">{destinationWeather.temp}°F, {destinationWeather.description}</p>}
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">Distance</p>
+                <p>{distance}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">Estimated Time</p>
+                <p>{duration}</p>
+              </div>
+            </div>
+            {trafficDelay && (
+              <div>
+                <p className="text-sm text-gray-500">With Traffic</p>
+                <p>{trafficDelay}</p>
               </div>
             )}
-            <div className="mt-4">
-              <h3 className="text-lg font-semibold">Route Advisories</h3>
-              {routeAdvisories.length > 0 ? (
-                <ul className="list-disc list-inside text-sm">
-                  {routeAdvisories.map((text, i) => (
-                    <li key={i}>{text}</li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-600">No active advisories for this route.</p>
-              )}
-            </div>
-            <div className="flex justify-end mt-4">
-              <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">Save Route</button>
+            {estimatedArrival && (
+              <div>
+                <p className="text-sm text-gray-500">Estimated Arrival</p>
+                <p>{estimatedArrival}</p>
+              </div>
+            )}
+            {(weatherAlerts.length || routeAdvisories.length) > 0 && (
+              <div className="pt-2 border-t">
+                {weatherAlerts.length > 0 && (
+                  <div className="mb-2">
+                    <h3 className="font-semibold">Weather Alerts</h3>
+                    <ul className="list-disc list-inside text-sm text-red-700">
+                      {weatherAlerts.map((a, i) => (
+                        <li key={i}>
+                          <strong>{a.event}</strong> — <a href={a.link} className="underline" target="_blank" rel="noopener noreferrer">Details</a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {routeAdvisories.length > 0 && (
+                  <div>
+                    <h3 className="font-semibold">Route Advisories</h3>
+                    <ul className="list-disc list-inside text-sm">
+                      {routeAdvisories.map((txt, i) => <li key={i}>{txt}</li>)}
+                    </ul>
+                  </div>
+                )}
+                {weatherAlerts.length === 0 && routeAdvisories.length === 0 && (
+                  <p className="text-sm text-gray-600">No active alerts or advisories.</p>
+                )}
+              </div>
+            )}
+            <div className="flex justify-end pt-4 border-t">
+              <button className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700">
+                Save Route
+              </button>
             </div>
           </div>
         )}
-      </div>
+      </section>
     </main>
   );
-}
+} 
