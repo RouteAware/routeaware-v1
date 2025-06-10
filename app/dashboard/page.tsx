@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import ForecastMap from '../components/ForecastMap';
+import Map from '../components/Map';
 import {
   FaExclamationTriangle,
   FaRoad,
@@ -147,7 +147,17 @@ export default function DashboardPage() {
         {/* Forecast Weather Map */}
         <div className="bg-white shadow rounded p-4">
           <h3 className="font-semibold mb-2 text-blue-700 text-sm">🌧️ Precipitation Forecast (±6 hours)</h3>
-          <ForecastMap />
+          <Map
+  origin=""
+  destination=""
+  showTraffic={false}
+  showWeather={true}
+  weatherLayer="precipitation_new"
+  weatherOpacity={0.5}
+  onSummaryUpdate={() => {}}
+  onAlertsUpdate={() => {}}
+  onAdvisoriesUpdate={() => {}}
+/>
         </div>
 
         {/* Extras */}

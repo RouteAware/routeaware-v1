@@ -1,14 +1,13 @@
-// Map.tsx - Add onCoordinatesUpdate callback for current weather
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
   GoogleMap,
-  useJsApiLoader,
   DirectionsRenderer,
   TrafficLayer,
   Marker,
 } from '@react-google-maps/api';
+import { useGoogleMapsLoader } from '../lib/googleMapsLoader';
 import { fetchBoundingBoxAlerts, RouteWeatherAdvisory } from '../utils/fetchBoundingBoxAlerts';
 import { fetchRouteAdvisories } from '../utils/fetchRouteAdvisories';
 
@@ -23,11 +22,12 @@ interface MapProps {
   onSummaryUpdate: (distance: string, duration: string, trafficDelay?: string) => void;
   onAlertsUpdate: (alerts: RouteWeatherAdvisory[]) => void;
   onAdvisoriesUpdate: (advisories: string[]) => void;
-  onCoordinatesUpdate?: (origin: google.maps.LatLngLiteral, destination: google.maps.LatLngLiteral) => void; // new
+  onCoordinatesUpdate?: (origin: google.maps.LatLngLiteral, destination: google.maps.LatLngLiteral) => void;
 }
 
 const containerStyle = { width: '100%', height: '100%' };
 const defaultCenter = { lat: 39.5, lng: -98.35 };
+const OPENWEATHER_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY ?? '';
 
 const Map: React.FC<MapProps> = ({
   origin,
@@ -40,7 +40,7 @@ const Map: React.FC<MapProps> = ({
   onSummaryUpdate,
   onAlertsUpdate,
   onAdvisoriesUpdate,
-  onCoordinatesUpdate, // new
+  onCoordinatesUpdate,
 }) => {
   const [directions, setDirections] = useState<google.maps.DirectionsResult | null>(null);
   const [originPos, setOriginPos] = useState<google.maps.LatLngLiteral | null>(null);
@@ -48,10 +48,7 @@ const Map: React.FC<MapProps> = ({
   const mapRef = useRef<google.maps.Map | null>(null);
   const weatherOverlayRef = useRef<google.maps.ImageMapType | null>(null);
 
-  const { isLoaded, loadError } = useJsApiLoader({
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places'],
-  });
+  const { isLoaded, loadError } = useGoogleMapsLoader();
 
   useEffect(() => {
     if (!isLoaded || !origin || !destination) return;
@@ -78,10 +75,7 @@ const Map: React.FC<MapProps> = ({
           setOriginPos(oPos);
           setDestPos(dPos);
 
-          // Emit coordinates for weather lookup
-          if (onCoordinatesUpdate) {
-            onCoordinatesUpdate(oPos, dPos);
-          }
+          if (onCoordinatesUpdate) onCoordinatesUpdate(oPos, dPos);
 
           onSummaryUpdate(
             leg.distance?.text || '',
@@ -89,18 +83,15 @@ const Map: React.FC<MapProps> = ({
             leg.duration_in_traffic?.text || ''
           );
 
-          // Fit to route
           const bounds = new google.maps.LatLngBounds();
           result.routes[0].overview_path.forEach((pt) => bounds.extend(pt));
           mapRef.current?.fitBounds(bounds);
 
-          // Weather alerts
           const ne = bounds.getNorthEast();
           const sw = bounds.getSouthWest();
           const alerts = await fetchBoundingBoxAlerts(sw.lat(), sw.lng(), ne.lat(), ne.lng());
           onAlertsUpdate(alerts);
 
-          // Route advisories
           const advisories = await fetchRouteAdvisories(sw.lat(), sw.lng(), ne.lat(), ne.lng());
           onAdvisoriesUpdate(advisories);
         } else {
@@ -113,22 +104,12 @@ const Map: React.FC<MapProps> = ({
         }
       }
     );
-  }, [
-    isLoaded,
-    origin,
-    destination,
-    departureTime,
-    onSummaryUpdate,
-    onAlertsUpdate,
-    onAdvisoriesUpdate,
-    onCoordinatesUpdate, // new
-  ]);
+  }, [isLoaded, origin, destination, departureTime]);
 
   const handleMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
   };
 
-  // Weather overlay
   useEffect(() => {
     if (!mapRef.current) return;
     if (weatherOverlayRef.current) {
@@ -136,8 +117,7 @@ const Map: React.FC<MapProps> = ({
       weatherOverlayRef.current = null;
     }
     if (showWeather) {
-      const tileUrl =
-        `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${process.env.NEXT_PUBLIC_OWM_KEY}`;
+      const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${OPENWEATHER_KEY}`;
       const overlay = new google.maps.ImageMapType({
         getTileUrl: (coord, zoom) =>
           tileUrl
