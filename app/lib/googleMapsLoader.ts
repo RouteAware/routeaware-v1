@@ -7,7 +7,7 @@ export function useGoogleMapsLoader() {
   return useJsApiLoader({
     id: 'script-loader',
     googleMapsApiKey: MAPS_API_KEY,
-    libraries: ['places', 'maps'], // ✅ Include all needed libraries
+    libraries: ['places'], // ✅ Include all needed libraries
     language: 'en',
     region: 'US',
   });
