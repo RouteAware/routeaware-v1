@@ -26,7 +26,13 @@ interface MapProps {
 }
 
 const containerStyle = { width: '100%', height: '100%' };
-const defaultCenter = { lat: 39.5, lng: -98.35 };
+const defaultCenter = { lat: 45.0, lng: -95.0 }; // North America center
+const defaultBounds = {
+  north: 72.0,
+  south: 10.0,
+  west: -170.0,
+  east: -50.0,
+};
 const OPENWEATHER_KEY = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY ?? '';
 
 const Map: React.FC<MapProps> = ({
@@ -108,22 +114,23 @@ const Map: React.FC<MapProps> = ({
 
   const handleMapLoad = (map: google.maps.Map) => {
     mapRef.current = map;
+    const bounds = new google.maps.LatLngBounds(
+      new google.maps.LatLng(defaultBounds.south, defaultBounds.west),
+      new google.maps.LatLng(defaultBounds.north, defaultBounds.east)
+    );
+    map.fitBounds(bounds);
   };
 
   useEffect(() => {
     if (!mapRef.current) return;
-    if (weatherOverlayRef.current) {
-      mapRef.current.overlayMapTypes.clear();
-      weatherOverlayRef.current = null;
-    }
+    mapRef.current.overlayMapTypes.clear();
+    weatherOverlayRef.current = null;
+
     if (showWeather) {
       const tileUrl = `https://tile.openweathermap.org/map/${weatherLayer}/{z}/{x}/{y}.png?appid=${OPENWEATHER_KEY}`;
       const overlay = new google.maps.ImageMapType({
         getTileUrl: (coord, zoom) =>
-          tileUrl
-            .replace('{x}', `${coord.x}`)
-            .replace('{y}', `${coord.y}`)
-            .replace('{z}', `${zoom}`),
+          tileUrl.replace('{x}', `${coord.x}`).replace('{y}', `${coord.y}`).replace('{z}', `${zoom}`),
         tileSize: new google.maps.Size(256, 256),
         opacity: weatherOpacity,
         name: 'WeatherOverlay',
@@ -148,7 +155,13 @@ const Map: React.FC<MapProps> = ({
         center={defaultCenter}
         zoom={4}
         onLoad={handleMapLoad}
-        options={{ disableDefaultUI: false, zoomControl: true, draggable: true, scrollwheel: true, gestureHandling: 'greedy' }}
+        options={{
+          disableDefaultUI: true,
+          zoomControl: false,
+          draggable: true,
+          scrollwheel: true,
+          gestureHandling: 'greedy',
+        }}
       >
         {showTraffic && <TrafficLayer />}
         {directions && <DirectionsRenderer directions={directions} options={{ suppressMarkers: true }} />}
